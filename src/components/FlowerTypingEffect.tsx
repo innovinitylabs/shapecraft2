@@ -19,9 +19,9 @@ export default function FlowerTypingEffect({ text, className = "" }: FlowerTypin
     if (!containerRef.current || !textInputRef.current) return;
 
     // Settings
-    const fontName = 'Verdana';
-    const textureFontSize = 70;
-    const fontScaleFactor = 0.075;
+    const fontName = 'Arial, sans-serif';
+    const textureFontSize = 120;
+    const fontScaleFactor = 0.12;
 
     // Set up hidden text input
     const textInputEl = textInputRef.current;
@@ -68,17 +68,19 @@ export default function FlowerTypingEffect({ text, className = "" }: FlowerTypin
     // Initialize 3D scene
     function init() {
       camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-      camera.position.z = 18;
+      camera.position.z = 25;
 
       scene = new THREE.Scene();
       sceneRef.current = scene;
 
       renderer = new THREE.WebGLRenderer({
-        alpha: true
+        alpha: true,
+        antialias: true
       });
       rendererRef.current = renderer;
       renderer.setPixelRatio(window.devicePixelRatio);
       renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setClearColor(0x000000, 0);
       containerRef.current!.appendChild(renderer.domElement);
 
       textCanvas = document.createElement('canvas');
@@ -117,31 +119,74 @@ export default function FlowerTypingEffect({ text, className = "" }: FlowerTypin
       scene.add(cursorMesh);
     }
 
-    // Create simple flower texture
+    // Create flower texture with petals
     function createFlowerTexture() {
       const canvas = document.createElement('canvas');
       canvas.width = 64;
       canvas.height = 64;
       const ctx = canvas.getContext('2d')!;
       
-      ctx.fillStyle = 'white';
+      // Clear canvas
+      ctx.clearRect(0, 0, 64, 64);
+      
+      // Draw flower with petals
+      const centerX = 32;
+      const centerY = 32;
+      const petalCount = 8;
+      const petalLength = 20;
+      const petalWidth = 8;
+      
+      // Draw petals
+      for (let i = 0; i < petalCount; i++) {
+        const angle = (i / petalCount) * Math.PI * 2;
+        const petalX = centerX + Math.cos(angle) * 8;
+        const petalY = centerY + Math.sin(angle) * 8;
+        
+        ctx.save();
+        ctx.translate(petalX, petalY);
+        ctx.rotate(angle);
+        
+        // Create petal shape
+        ctx.beginPath();
+        ctx.ellipse(0, 0, petalWidth, petalLength, 0, 0, Math.PI * 2);
+        ctx.fillStyle = 'white';
+        ctx.fill();
+        
+        ctx.restore();
+      }
+      
+      // Draw center
       ctx.beginPath();
-      ctx.arc(32, 32, 28, 0, Math.PI * 2);
+      ctx.arc(centerX, centerY, 6, 0, Math.PI * 2);
+      ctx.fillStyle = 'white';
       ctx.fill();
       
       return canvas;
     }
 
-    // Create simple leaf texture
+    // Create leaf texture
     function createLeafTexture() {
       const canvas = document.createElement('canvas');
       canvas.width = 64;
       canvas.height = 64;
       const ctx = canvas.getContext('2d')!;
       
-      ctx.fillStyle = 'white';
+      // Clear canvas
+      ctx.clearRect(0, 0, 64, 64);
+      
+      // Draw leaf shape
+      const centerX = 32;
+      const centerY = 32;
+      
       ctx.beginPath();
-      ctx.ellipse(32, 32, 20, 12, Math.PI / 4, 0, Math.PI * 2);
+      ctx.moveTo(centerX, centerY - 20);
+      ctx.quadraticCurveTo(centerX + 15, centerY - 10, centerX + 12, centerY);
+      ctx.quadraticCurveTo(centerX + 15, centerY + 10, centerX, centerY + 20);
+      ctx.quadraticCurveTo(centerX - 15, centerY + 10, centerX - 12, centerY);
+      ctx.quadraticCurveTo(centerX - 15, centerY - 10, centerX, centerY - 20);
+      ctx.closePath();
+      
+      ctx.fillStyle = 'white';
       ctx.fill();
       
       return canvas;
