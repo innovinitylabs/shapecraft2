@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Heart, Clock, Edit3, Zap, Users, TrendingUp } from 'lucide-react';
+import { Heart, Clock, Edit3, TrendingUp } from 'lucide-react';
 import FlowerArt, { generateFlowerTraits } from '@/components/FlowerArt';
 import AdvancedMoodSlider from '@/components/AdvancedMoodSlider';
 

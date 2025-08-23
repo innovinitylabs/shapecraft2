@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, Frown, Meh, Smile, Laugh } from 'lucide-react';
 
@@ -55,12 +55,12 @@ export default function MoodSlider({ value, onChange, disabled = false, size = '
     handleMouseMove(e);
   };
 
-  const handleMouseUp = () => {
+  const handleMouseUp = useCallback(() => {
     if (isDragging && hoverValue !== null) {
       onChange(hoverValue);
     }
     setIsDragging(false);
-  };
+  }, [isDragging, hoverValue, onChange]);
 
   const handleClick = (e: React.MouseEvent) => {
     if (disabled) return;
@@ -101,7 +101,7 @@ export default function MoodSlider({ value, onChange, disabled = false, size = '
         
         {/* Mood indicators */}
         <div className="relative z-10 flex justify-between items-center h-full">
-          {moodData.map((mood, index) => (
+          {moodData.map((mood) => (
             <motion.div
               key={mood.value}
               className="flex flex-col items-center"

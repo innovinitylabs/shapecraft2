@@ -36,7 +36,7 @@ export default function FlowerTypingEffect({ text, className = "" }: FlowerTypin
     let textCtx: CanvasRenderingContext2D;
     let particleGeometry: THREE.PlaneGeometry;
     let dummy: THREE.Object3D;
-    let clock: THREE.Clock;
+    let clock: THREE.Clock; // eslint-disable-line @typescript-eslint/no-unused-vars
     let cursorMesh: THREE.Mesh;
     let flowerInstancedMesh: THREE.InstancedMesh;
     let leafInstancedMesh: THREE.InstancedMesh;

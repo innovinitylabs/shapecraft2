@@ -173,7 +173,7 @@ class MoodClassifierService {
     }
   }
 
-  async getExample(): Promise<{ example_request: any; example_response: FlowerArtParameters }> {
+  async getExample(): Promise<{ example_request: Record<string, unknown>; example_response: FlowerArtParameters }> {
     try {
       const response = await fetch(`${this.baseUrl}/api/example`);
       if (!response.ok) {

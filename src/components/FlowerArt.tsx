@@ -42,13 +42,13 @@ export default function FlowerArt({
   size = 300, 
   interactive = false,
   onMoodChange,
-  emotion,
+  emotion, // eslint-disable-line @typescript-eslint/no-unused-vars
   petalCount: moodPetalCount,
   layerCount: moodLayerCount,
-  heartbeatBPM,
+  heartbeatBPM, // eslint-disable-line @typescript-eslint/no-unused-vars
   heartbeatIntensity,
-  rotationSpeed,
-  rotationDirection,
+  rotationSpeed, // eslint-disable-line @typescript-eslint/no-unused-vars
+  rotationDirection, // eslint-disable-line @typescript-eslint/no-unused-vars
   className = ''
 }: FlowerArtProps) {
   // Create default traits if not provided

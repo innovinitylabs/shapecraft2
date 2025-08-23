@@ -37,7 +37,7 @@ export default function AdvancedMoodSlider({
   onChange,
   disabled = false,
   showDetails = true,
-  size = 'medium'
+  size = 'medium' // eslint-disable-line @typescript-eslint/no-unused-vars
 }: AdvancedMoodSliderProps) {
   const [hoveredMood, setHoveredMood] = useState<MoodData | null>(null);
 
