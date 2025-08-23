@@ -1,0 +1,146 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Lightweight Three.js Bee</title>
+  <style>
+    html,body{height:100%;margin:0;background:#0b1220}
+    canvas{display:block}
+    #ui{position:fixed;left:12px;top:12px;color:#fff;font-family:system-ui}
+  </style>
+</head>
+<body>
+<div id="ui">Lightweight Bee — drag to orbit</div>
+<script type="module">
+import * as THREE from 'https://unpkg.com/three@0.154.0/build/three.module.js';
+import { OrbitControls } from 'https://unpkg.com/three@0.154.0/examples/jsm/controls/OrbitControls.js';
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(50, innerWidth/innerHeight, 0.1, 2000);
+camera.position.set(0, 1.2, 3);
+
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(2, devicePixelRatio));
+document.body.appendChild(renderer.domElement);
+
+// lighting
+const hemi = new THREE.HemisphereLight(0xffffee, 0x222233, 0.9);
+scene.add(hemi);
+const dir = new THREE.DirectionalLight(0xffffff, 0.6);
+dir.position.set(5,5,2);
+scene.add(dir);
+
+// ground subtle
+const gmat = new THREE.MeshStandardMaterial({color:0x081018, metalness:0.1, roughness:1});
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(40,40), gmat);
+ground.rotation.x = -Math.PI/2; ground.position.y = -1;
+ground.receiveShadow = true;
+scene.add(ground);
+
+// Bee group
+const bee = new THREE.Group();
+scene.add(bee);
+
+// Body (ellipsoid)
+const bodyGeom = new THREE.SphereGeometry(0.35, 16, 12);
+bodyGeom.scale(1, 1.2, 1);
+const bodyMat = new THREE.MeshStandardMaterial({color:0xffd66b, roughness:0.6});
+const body = new THREE.Mesh(bodyGeom, bodyMat);
+body.castShadow = true;
+bee.add(body);
+
+// Stripes: three thin black rings — create as flattened tori or extruded rings
+const stripeMat = new THREE.MeshStandardMaterial({color:0x0a0a0a, roughness:0.7});
+for(let i=-1;i<=1;i++){
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.36, 0.05, 8, 50), stripeMat);
+  ring.rotation.x = Math.PI/2;
+  ring.position.y = i * 0.12;
+  ring.scale.set(1,0.6,1);
+  body.add(ring);
+}
+
+// Head
+const head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 10), new THREE.MeshStandardMaterial({color:0x222222, roughness:0.6}));
+head.position.set(0, 0.42, 0.45);
+bee.add(head);
+
+// Eyes (simple)
+const eyeGeom = new THREE.SphereGeometry(0.06, 8, 6);
+const eyeMat = new THREE.MeshStandardMaterial({color:0x111111});
+const leftEye = new THREE.Mesh(eyeGeom, eyeMat); leftEye.position.set(-0.09, 0.45, 0.55);
+const rightEye = leftEye.clone(); rightEye.position.x = 0.09;
+bee.add(leftEye, rightEye);
+
+// Antennae (thin cylinders)
+function makeAntenna(side=1){
+  const geom = new THREE.CylinderGeometry(0.01,0.01,0.45,6);
+  const mat = new THREE.MeshStandardMaterial({color:0x111111});
+  const mesh = new THREE.Mesh(geom, mat);
+  mesh.rotation.z = side * 0.6;
+  mesh.position.set(side*0.06, 0.7, 0.15);
+  return mesh;
+}
+bee.add(makeAntenna(1), makeAntenna(-1));
+
+// Wings (two thin planes with transparency). We'll pivot them for flapping
+const wingMat = new THREE.MeshStandardMaterial({color:0xeef6ff, opacity:0.85, transparent:true, side: THREE.DoubleSide, metalness:0.0, roughness:0.5});
+function makeWing(offsetX=0.2, sign=1){
+  const geom = new THREE.PlaneGeometry(0.6, 0.28, 6,4);
+  const mesh = new THREE.Mesh(geom, wingMat);
+  mesh.geometry.translate(-0.3, 0, 0); // pivot near center
+  mesh.position.set(offsetX, 0.45, 0);
+  mesh.rotation.set(0, sign * 0.2, 0.45);
+  return mesh;
+}
+const leftWing = makeWing(-0.08, 1);
+const rightWing = makeWing(0.08, -1);
+bee.add(leftWing, rightWing);
+
+// Tail stinger (cone)
+const stinger = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.22, 8), new THREE.MeshStandardMaterial({color:0x111111}));
+stinger.position.set(0, -0.1, -0.46);
+stinger.rotation.x = Math.PI;
+bee.add(stinger);
+
+// subtle shadow
+renderer.shadowMap.enabled = true;
+dir.castShadow = true;
+body.castShadow = true;
+head.castShadow = true;
+
+// Controls
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+
+// Animation params
+let clock = new THREE.Clock();
+function animate(){
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
+
+  // gentle flight bob + rotation
+  bee.position.y = Math.sin(t * 1.2) * 0.08 + 0.1;
+  bee.rotation.y = Math.sin(t * 0.3) * 0.08;
+
+  // wing flap: use sin for natural motion; scale speed for desired effect
+  const wingSpeed = 18.0; // increase for faster flapping
+  const wingAngle = Math.sin(t * wingSpeed) * 0.9 + 0.5;
+  leftWing.rotation.z =  -wingAngle * 0.6 + 0.4;
+  rightWing.rotation.z =   wingAngle * 0.6 - 0.4;
+
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
+
+// handle resize
+window.addEventListener('resize', ()=> {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+</script>
+</body>
+</html>

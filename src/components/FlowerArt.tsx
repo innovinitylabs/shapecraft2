@@ -20,18 +20,51 @@ interface FlowerTraits {
 }
 
 interface FlowerArtProps {
-  traits: FlowerTraits;
+  // Legacy props for backward compatibility
+  traits?: FlowerTraits;
   size?: number;
   interactive?: boolean;
   onMoodChange?: (mood: number) => void;
+  
+  // New mood classifier props
+  emotion?: string;
+  petalCount?: number;
+  layerCount?: number;
+  heartbeatBPM?: number;
+  heartbeatIntensity?: number;
+  rotationSpeed?: number;
+  rotationDirection?: number;
+  className?: string;
 }
 
 export default function FlowerArt({ 
   traits, 
   size = 300, 
   interactive = false,
-  onMoodChange 
+  onMoodChange,
+  emotion, // eslint-disable-line @typescript-eslint/no-unused-vars
+  petalCount: moodPetalCount,
+  layerCount: moodLayerCount,
+  heartbeatBPM, // eslint-disable-line @typescript-eslint/no-unused-vars
+  heartbeatIntensity,
+  rotationSpeed, // eslint-disable-line @typescript-eslint/no-unused-vars
+  rotationDirection, // eslint-disable-line @typescript-eslint/no-unused-vars
+  className = ''
 }: FlowerArtProps) {
+  // Create default traits if not provided
+  const defaultTraits: FlowerTraits = {
+    coreShape: 'circle',
+    mood: 5,
+    petalCount: moodPetalCount || 6,
+    petalShape: 'rounded',
+    ringCount: moodLayerCount || 2,
+    petalThickness: 0.5,
+    glowIntensity: heartbeatIntensity || 0.3,
+    collectiveMood: 0.5,
+    tradingActivity: 0.5
+  };
+  
+  const flowerTraits = traits || defaultTraits;
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -311,14 +344,14 @@ export default function FlowerArt({
     flowerGroupRef.current = flowerGroup;
 
     // Get beautiful colors based on mood
-    const colors = getMoodColors(traits.mood);
+    const colors = getMoodColors(flowerTraits.mood);
 
     // Create flower center with beautiful material
-    const centerGeometry = createCenterGeometry(traits.coreShape);
+    const centerGeometry = createCenterGeometry(flowerTraits.coreShape);
     const centerMaterial = new THREE.MeshPhongMaterial({
       color: colors.center,
       emissive: colors.primary,
-      emissiveIntensity: traits.glowIntensity * 0.2,
+      emissiveIntensity: flowerTraits.glowIntensity * 0.2,
       shininess: 100,
       transparent: true,
       opacity: 0.9
@@ -327,19 +360,19 @@ export default function FlowerArt({
     flowerGroup.add(center);
 
     // Create beautiful petals
-    for (let i = 0; i < traits.petalCount; i++) {
-      const petalGeometry = createPetalGeometry(traits.petalShape);
+    for (let i = 0; i < flowerTraits.petalCount; i++) {
+      const petalGeometry = createPetalGeometry(flowerTraits.petalShape);
       const petalMaterial = new THREE.MeshPhongMaterial({
         color: colors.petal,
         emissive: colors.secondary,
-        emissiveIntensity: traits.glowIntensity * 0.1,
+        emissiveIntensity: flowerTraits.glowIntensity * 0.1,
         transparent: true,
         opacity: 0.95,
         shininess: 50
       });
       const petal = new THREE.Mesh(petalGeometry, petalMaterial);
       
-      const angle = (i / traits.petalCount) * Math.PI * 2;
+      const angle = (i / flowerTraits.petalCount) * Math.PI * 2;
       const radius = 1.2 + (i % 2) * 0.2;
       petal.position.set(
         Math.cos(angle) * radius,
@@ -347,34 +380,34 @@ export default function FlowerArt({
         0
       );
       petal.rotation.z = angle;
-      petal.scale.setScalar(0.8 + (traits.mood / 10) * 0.3);
+      petal.scale.setScalar(0.8 + (flowerTraits.mood / 10) * 0.3);
       flowerGroup.add(petal);
     }
 
     // Create beautiful ring layers
-    for (let i = 0; i < traits.ringCount; i++) {
+    for (let i = 0; i < flowerTraits.ringCount; i++) {
       const ringGeometry = new THREE.RingGeometry(1.8 + i * 0.2, 2.0 + i * 0.2, 32);
       const ringMaterial = new THREE.MeshPhongMaterial({
         color: colors.accent,
         transparent: true,
         opacity: 0.4 - (i * 0.1),
         emissive: colors.accent,
-        emissiveIntensity: traits.glowIntensity * (0.3 - i * 0.05)
+        emissiveIntensity: flowerTraits.glowIntensity * (0.3 - i * 0.05)
       });
       const ring = new THREE.Mesh(ringGeometry, ringMaterial);
-      ring.rotation.z = (i * Math.PI) / traits.ringCount;
+      ring.rotation.z = (i * Math.PI) / flowerTraits.ringCount;
       flowerGroup.add(ring);
     }
 
     // Create collective mood aura
-    const auraColors = getMoodColors(traits.collectiveMood);
+    const auraColors = getMoodColors(flowerTraits.collectiveMood);
     const auraGeometry = new THREE.SphereGeometry(2.8, 32, 32);
     const auraMaterial = new THREE.MeshPhongMaterial({
       color: auraColors.primary,
       transparent: true,
       opacity: 0.15,
       emissive: auraColors.primary,
-      emissiveIntensity: traits.glowIntensity * 0.05
+      emissiveIntensity: flowerTraits.glowIntensity * 0.05
     });
     const aura = new THREE.Mesh(auraGeometry, auraMaterial);
     flowerGroup.add(aura);
@@ -393,14 +426,14 @@ export default function FlowerArt({
         flowerGroup.rotation.z += 0.003;
         
         // Breathing animation based on trading activity
-        const breathingScale = 1 + Math.sin(Date.now() * 0.001 * (1 + traits.tradingActivity)) * 0.05;
+        const breathingScale = 1 + Math.sin(Date.now() * 0.001 * (1 + flowerTraits.tradingActivity)) * 0.05;
         flowerGroup.scale.setScalar(breathingScale);
         
         // Mood-based pulsing
         flowerGroup.children.forEach((child, index) => {
           if (child instanceof THREE.Mesh) {
             const pulse = Math.sin(Date.now() * 0.002 + index * 0.3) * 0.05;
-            child.material.emissiveIntensity = traits.glowIntensity * (0.2 + pulse);
+            child.material.emissiveIntensity = flowerTraits.glowIntensity * (0.2 + pulse);
           }
         });
       }
@@ -429,7 +462,7 @@ export default function FlowerArt({
               const glowIntensity = Math.max(0.1, 1 - distanceFromCenter) * 0.5;
               
               // Increase emissive intensity for glow effect
-              child.material.emissiveIntensity = traits.glowIntensity * (0.3 + glowIntensity);
+              child.material.emissiveIntensity = flowerTraits.glowIntensity * (0.3 + glowIntensity);
               
               // Add subtle scale effect for petals
               if (index > 0) { // Skip center, only petals
@@ -450,11 +483,11 @@ export default function FlowerArt({
           // Reset emissive intensity to normal
           flowerGroup.children.forEach((child) => {
             if (child instanceof THREE.Mesh) {
-              child.material.emissiveIntensity = traits.glowIntensity * 0.2;
+              child.material.emissiveIntensity = flowerTraits.glowIntensity * 0.2;
               
               // Reset scale for petals
               if (child !== flowerGroup.children[0]) { // Skip center
-                child.scale.setScalar(0.8 + (traits.mood / 10) * 0.3);
+                child.scale.setScalar(0.8 + (flowerTraits.mood / 10) * 0.3);
               }
             }
           });
@@ -481,12 +514,12 @@ export default function FlowerArt({
     }
 
     return cleanup;
-  }, [traits, size, interactive, onMoodChange]);
+  }, [flowerTraits, size, interactive, onMoodChange]);
 
   return (
     <div 
       ref={containerRef} 
-      className="relative cursor-pointer"
+      className={`relative cursor-pointer ${className}`}
       style={{ width: size, height: size }}
     >
       {interactive && (

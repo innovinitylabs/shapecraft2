@@ -43,3 +43,6 @@ next-env.d.ts
 
 # references
 /references
+
+# mood classifier (external repository)
+/mood-classifier
