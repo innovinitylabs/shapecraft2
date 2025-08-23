@@ -124,6 +124,11 @@
             <input type="range" id="layer-offset-slider" min="0" max="1" value="0" step="0.01">
             <span id="layer-offset-value">0.00</span>
         </div>
+        <div class="control-group">
+            <label>Stalk Length:</label>
+            <input type="range" id="stalk-slider" min="0" max="20" value="5" step="0.5">
+            <span id="stalk-value">5.0</span>
+        </div>
     </div>
 
     <div id="container-scene">
@@ -155,6 +160,8 @@
         let layerCount = 2;
         let layerRotations = [0, 0]; // Individual rotation for each layer
         let layerOffsets = [0, 0]; // Angular offset for each layer
+        let stalkLength = 5;
+        let stalkMesh = null;
 
         function init() {
             container = document.querySelector("#container-scene");
@@ -172,7 +179,7 @@
 
             // controls
             controls = new THREE.OrbitControls(camera, container);
-            controls.target.set(0, 15, 0);
+            controls.target.set(0, 0, 0); // Center on flower
             controls.update();
 
             generateFlower();
@@ -225,6 +232,106 @@
             }
             
             updateLayerSelector();
+            createStalk();
+        }
+
+        function createStalk() {
+            // Remove existing stalk and connector if they exist
+            if (stalkMesh) {
+                scene.remove(stalkMesh);
+                stalkMesh = null;
+            }
+            // Remove any existing connectors
+            scene.children = scene.children.filter(child => !child.userData.isConnector);
+            
+            if (stalkLength > 0) {
+                // Create organic stalk using quadratic Bezier curve (like the reference code)
+                const pos = [];
+                const col = [];
+                const ind = [];
+                let offset = 0;
+                
+                // Stalk parameters
+                const y0 = -10; // Start higher to connect with flower
+                const l0 = stalkLength * 0.3; // First segment
+                const l1 = stalkLength * 0.7; // Second segment
+                const theta = -0.3; // Bend angle (negative for downward curve)
+                const R0 = 1.2; // Top radius (wider to connect with flower)
+                const R = 1.5; // Bottom radius
+                const nt = 12; // Number of segments along length
+                const nfi = 8; // Number of segments around circumference
+                
+                // Quadratic Bezier control points: (0,0) (0,l0) (l1*sin(th), l0 + l1*cos(th))
+                const lx = l1 * Math.sin(theta);
+                const ly = l0 + l1 * Math.cos(theta);
+                
+                const stn = 1 / (nt - 1);
+                const stFi = 2 * Math.PI / (nfi - 1);
+                
+                // Generate stalk vertices
+                for (let t = 0; t < 1.001; t += stn) {
+                    const x = t * t * lx;
+                    const y = y0 - (2 * t * (1 - t) * l0 + t * t * ly); // Negative to grow downward
+                    
+                    // Tangent vector
+                    const dx = t * lx;
+                    const dy = -(1 - t - t) * l0 - t * ly; // Negative for downward direction
+                    const dlen = Math.sqrt(dx * dx + dy * dy);
+                    const dxNorm = dx / dlen;
+                    const dyNorm = dy / dlen;
+                    
+                    // Radius varies along length
+                    const r = R0 + t * (R - R0);
+                    
+                    // Generate circumference points
+                    for (let fi = 0; fi < 6.3; fi += stFi) {
+                        const len = r * Math.cos(fi);
+                        pos.push(x + dyNorm * len, y - dxNorm * len, r * Math.sin(fi));
+                        col.push(0, 0.5, 0); // Green color
+                    }
+                }
+                
+                // Generate indices for triangles
+                let t = offset;
+                let tn = offset + nfi;
+                for (let i = 0; i < nt - 1; i++) {
+                    for (let j = 0; j < nfi - 1; j++) {
+                        ind.push(t++); ind.push(tn); ind.push(t);
+                        ind.push(tn++); ind.push(tn); ind.push(t);
+                    }
+                    t++; tn++;
+                }
+                offset += nt * nfi;
+                
+                // Create geometry
+                const stalkGeometry = new THREE.BufferGeometry();
+                stalkGeometry.setIndex(ind);
+                stalkGeometry.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+                stalkGeometry.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+                stalkGeometry.computeVertexNormals();
+                
+                const stalkMaterial = new THREE.MeshPhongMaterial({
+                    vertexColors: THREE.VertexColors,
+                    side: THREE.DoubleSide,
+                    shininess: 20
+                });
+                
+                stalkMesh = new THREE.Mesh(stalkGeometry, stalkMaterial);
+                scene.add(stalkMesh);
+                
+                // Add a small connecting cylinder to bridge any gap
+                const connectorGeometry = new THREE.CylinderGeometry(1.2, 1.2, 2, 8);
+                const connectorMaterial = new THREE.MeshPhongMaterial({
+                    color: 0x2d5a27,
+                    shininess: 20
+                });
+                const connector = new THREE.Mesh(connectorGeometry, connectorMaterial);
+                connector.position.y = -11; // Position between flower and stalk
+                connector.userData.isConnector = true; // Mark for easy removal
+                scene.add(connector);
+                
+                console.log('Bezier stalk created with length:', stalkLength);
+            }
         }
 
         function initRenderer() {
@@ -266,8 +373,8 @@
             const petalValueDisplay = document.getElementById('slider-value');
             
             petalSlider.addEventListener('input', function(e) {
-                petalRotation = parseFloat(e.target.value);
-                petalValueDisplay.textContent = petalRotation.toFixed(2);
+                petalRotation = parseFloat(e.target.value) * 0.5; // Scale to 0-0.5 (0-90 degrees)
+                petalValueDisplay.textContent = (petalRotation * 180).toFixed(1) + '°';
                 updateRotationInfo();
             });
 
@@ -298,16 +405,16 @@
             
             layerSelector.addEventListener('change', function(e) {
                 const selectedLayer = parseInt(e.target.value);
-                layerRotationSlider.value = layerRotations[selectedLayer];
-                layerRotationValue.textContent = layerRotations[selectedLayer].toFixed(2);
+                layerRotationSlider.value = layerRotations[selectedLayer] * 2; // Convert back to slider scale (0-1)
+                layerRotationValue.textContent = (layerRotations[selectedLayer] * 180).toFixed(1) + '°';
                 layerOffsetSlider.value = layerOffsets[selectedLayer];
                 layerOffsetValue.textContent = layerOffsets[selectedLayer].toFixed(2);
             });
             
             layerRotationSlider.addEventListener('input', function(e) {
                 const selectedLayer = parseInt(layerSelector.value);
-                layerRotations[selectedLayer] = parseFloat(e.target.value);
-                layerRotationValue.textContent = layerRotations[selectedLayer].toFixed(2);
+                layerRotations[selectedLayer] = parseFloat(e.target.value) * 0.5; // Scale to 0-0.5 (0-90 degrees)
+                layerRotationValue.textContent = (layerRotations[selectedLayer] * 180).toFixed(1) + '°';
                 updateRotationInfo();
             });
 
@@ -319,6 +426,15 @@
                 layerOffsets[selectedLayer] = parseFloat(e.target.value);
                 layerOffsetValue.textContent = layerOffsets[selectedLayer].toFixed(2);
                 updateRotationInfo();
+            });
+
+            const stalkSlider = document.getElementById('stalk-slider');
+            const stalkValueDisplay = document.getElementById('stalk-value');
+            
+            stalkSlider.addEventListener('input', function(e) {
+                stalkLength = parseFloat(e.target.value);
+                stalkValueDisplay.textContent = stalkLength.toFixed(1);
+                createStalk();
             });
 
             // Initialize rotation info
@@ -338,18 +454,18 @@
         }
 
         function updateRotationInfo() {
-            const rotationDegrees = (petalRotation * 90).toFixed(1);
-            const rotationRadians = (petalRotation * Math.PI / 2).toFixed(3);
+            const rotationDegrees = (petalRotation * 180).toFixed(1);
+            const rotationRadians = (petalRotation * Math.PI).toFixed(3);
             
             document.getElementById('rotation-degrees').textContent = rotationDegrees + '°';
             document.getElementById('rotation-radians').textContent = rotationRadians;
-            document.getElementById('slider-display').textContent = petalRotation.toFixed(2);
+            document.getElementById('slider-display').textContent = (petalRotation * 180).toFixed(1) + '°';
             document.getElementById('count-display').textContent = petalCount;
             document.getElementById('layer-display').textContent = layerCount;
             
             const selectedLayer = parseInt(document.getElementById('layer-selector').value);
             document.getElementById('selected-layer-display').textContent = selectedLayer + 1;
-            document.getElementById('layer-rotation-display').textContent = layerRotations[selectedLayer].toFixed(2);
+            document.getElementById('layer-rotation-display').textContent = (layerRotations[selectedLayer] * 180).toFixed(1) + '°';
             document.getElementById('layer-offset-display').textContent = layerOffsets[selectedLayer].toFixed(2);
         }
     </script>
