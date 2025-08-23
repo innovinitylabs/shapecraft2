@@ -177,6 +177,13 @@
                         Static (Sad)
                     </div>
                 </div>
+                
+                <div class="control-group">
+                    <label>Heartbeat:</label>
+                    <div id="heartbeat-info" style="color: #ff0066; font-weight: bold;">
+                        72 BPM (Normal)
+                    </div>
+                </div>
     </div>
 
     <div id="container-scene">
@@ -239,10 +246,13 @@
         let currentEmotion = "neutral"; // Default emotion
         let moodRotationSpeed = 0; // Rotation speed based on mood intensity
         let moodRotationDirection = 1; // 1 for clockwise, -1 for counterclockwise
+        let heartbeatBPM = 60; // Heartbeat BPM based on mood
+        let heartbeatIntensity = 0.3; // Glow intensity based on mood
 
         function init() {
             container = document.querySelector("#container-scene");
             scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000000); // Set black background
 
             //camera
             camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -272,7 +282,9 @@
 
         init();
         calculateMoodRotation(); // Initialize mood rotation system
+        calculateHeartbeatBPM(); // Initialize heartbeat BPM system
         updateMoodRotationDisplay(); // Initialize mood rotation display
+        updateHeartbeatDisplay(); // Initialize heartbeat display
 
         function generateFlower() {
             // Clear existing petal layers
@@ -361,7 +373,7 @@
             const moodSettings = {
                 "happy": { intensity: 0.8, direction: 1 },    // High intensity, clockwise
                 "joy": { intensity: 1.0, direction: 1 },      // Maximum intensity, clockwise
-                "sad": { intensity: 0.0, direction: 0 },      // No rotation (static)
+                "sad": { intensity: 0.01, direction: -1 },    // Extremely slow rotation, counterclockwise
                 "fear": { intensity: 0.6, direction: -1 },    // Medium intensity, counterclockwise
                 "anger": { intensity: 0.9, direction: -1 },   // High intensity, counterclockwise
                 "disgust": { intensity: 0.4, direction: -1 }, // Low intensity, counterclockwise
@@ -396,19 +408,112 @@
         
         function updateMoodRotationDisplay() {
             const moodInfo = document.getElementById('mood-rotation-info');
-            if (moodRotationSpeed === 0) {
-                moodInfo.textContent = 'Static (Sad)';
-                moodInfo.style.color = '#4169E1'; // Blue for sad
+            const baseDirection = moodRotationDirection === 1 ? 'Clockwise' : 'Counter-clockwise';
+            const oppositeDirection = moodRotationDirection === 1 ? 'Counter-clockwise' : 'Clockwise';
+            
+            let intensity = '';
+            if (moodRotationSpeed === 1.0) {
+                intensity = 'Maximum';
+            } else if (moodRotationSpeed >= 0.8) {
+                intensity = 'High';
+            } else if (moodRotationSpeed >= 0.6) {
+                intensity = 'Medium';
+            } else if (moodRotationSpeed >= 0.4) {
+                intensity = 'Low';
+            } else if (moodRotationSpeed >= 0.2) {
+                intensity = 'Very Low';
             } else {
-                const baseDirection = moodRotationDirection === 1 ? 'Clockwise' : 'Counter-clockwise';
-                const oppositeDirection = moodRotationDirection === 1 ? 'Counter-clockwise' : 'Clockwise';
-                const intensity = moodRotationSpeed === 1.0 ? 'Maximum' : 
-                                 moodRotationSpeed >= 0.8 ? 'High' :
-                                 moodRotationSpeed >= 0.6 ? 'Medium' :
-                                 moodRotationSpeed >= 0.4 ? 'Low' : 'Very Low';
-                moodInfo.textContent = `Alternating: ${baseDirection}/${oppositeDirection} (${intensity})`;
-                moodInfo.style.color = moodRotationDirection === 1 ? '#00ff00' : '#ff6600'; // Green for clockwise, orange for counter-clockwise
+                intensity = 'Minimal';
             }
+            
+            moodInfo.textContent = `Alternating: ${baseDirection}/${oppositeDirection} (${intensity})`;
+            moodInfo.style.color = moodRotationDirection === 1 ? '#00ff00' : '#ff6600'; // Green for clockwise, orange for counter-clockwise
+        }
+        
+        function updateHeartbeatDisplay() {
+            const heartbeatInfo = document.getElementById('heartbeat-info');
+            let status = '';
+            let color = '#ff0066'; // Default pink
+            
+            if (heartbeatBPM >= 100) {
+                status = 'Very High';
+                color = '#ff0000'; // Red for very high
+            } else if (heartbeatBPM >= 85) {
+                status = 'High';
+                color = '#ff6600'; // Orange for high
+            } else if (heartbeatBPM >= 70) {
+                status = 'Normal';
+                color = '#00ff00'; // Green for normal
+            } else if (heartbeatBPM >= 60) {
+                status = 'Low';
+                color = '#0066ff'; // Blue for low
+            } else {
+                status = 'Very Low';
+                color = '#6600ff'; // Purple for very low
+            }
+            
+            heartbeatInfo.textContent = `${heartbeatBPM} BPM (${status})`;
+            heartbeatInfo.style.color = color;
+        }
+        
+        // ========================================
+        // HEARTBEAT GLOW SYSTEM
+        // ========================================
+        
+        function calculateHeartbeatBPM() {
+            // Define BPM and intensity for each emotion
+            const heartbeatSettings = {
+                "happy": { bpm: 85, intensity: 0.6 },      // Elevated heart rate, moderate glow
+                "joy": { bpm: 95, intensity: 0.8 },        // High heart rate, strong glow
+                "sad": { bpm: 55, intensity: 0.2 },        // Slow heart rate, weak glow
+                "fear": { bpm: 110, intensity: 0.9 },      // Very high heart rate, intense glow
+                "anger": { bpm: 100, intensity: 0.7 },     // High heart rate, strong glow
+                "disgust": { bpm: 70, intensity: 0.4 },    // Normal heart rate, moderate glow
+                "shame": { bpm: 65, intensity: 0.3 },      // Slightly elevated, weak glow
+                "surprise": { bpm: 90, intensity: 0.7 },   // Elevated heart rate, strong glow
+                "neutral": { bpm: 72, intensity: 0.4 }     // Normal heart rate, moderate glow
+            };
+            
+            const mood = heartbeatSettings[currentEmotion] || heartbeatSettings["neutral"];
+            heartbeatBPM = mood.bpm;
+            heartbeatIntensity = mood.intensity;
+        }
+        
+        function updateHeartbeatGlow() {
+            const t = Date.now() * 0.001; // Current time in seconds
+            const heartbeatPeriod = 60 / heartbeatBPM; // Convert BPM to period in seconds
+            const heartbeatPhase = (t % heartbeatPeriod) / heartbeatPeriod; // Phase from 0 to 1
+            
+            // Create a realistic heartbeat pulse using multiple sine waves
+            const pulse1 = Math.sin(heartbeatPhase * Math.PI * 2);
+            const pulse2 = Math.sin(heartbeatPhase * Math.PI * 4) * 0.3; // Secondary pulse
+            const heartbeatPulse = (pulse1 + pulse2) * 0.5 + 0.5; // Normalize to 0-1
+            
+            // Apply glow to all petal layers
+            petalLayers.forEach((layer, layerIndex) => {
+                layer.forEach(petal => {
+                    // Get the base emotion color
+                    const baseColor = emotion_colors[currentEmotion] || emotion_colors["neutral"];
+                    const hex = baseColor.replace('#', '');
+                    const r = parseInt(hex.substr(0, 2), 16);
+                    const g = parseInt(hex.substr(2, 2), 16);
+                    const b = parseInt(hex.substr(4, 2), 16);
+                    
+                    // Apply heartbeat glow effect
+                    const glowFactor = 1 + (heartbeatPulse * heartbeatIntensity);
+                    const glowR = Math.min(255, Math.floor(r * glowFactor));
+                    const glowG = Math.min(255, Math.floor(g * glowFactor));
+                    const glowB = Math.min(255, Math.floor(b * glowFactor));
+                    
+                    // Create glowing color
+                    const glowColor = (glowR << 16) | (glowG << 8) | glowB;
+                    petal.material.color.setHex(glowColor);
+                    
+                    // Add subtle emissive glow
+                    petal.material.emissive = new THREE.Color(glowColor);
+                    petal.material.emissiveIntensity = heartbeatPulse * heartbeatIntensity * 0.3;
+                });
+            });
         }
         
         // ========================================
@@ -1089,6 +1194,9 @@
             // Update mood-based rotation
             updateMoodRotation();
             
+            // Update heartbeat glow effect
+            updateHeartbeatGlow();
+            
             // Update all petal layers with individual rotations and offsets
             petalLayers.forEach((layer, layerIndex) => {
                 for (var i = 0; i < petalCount; i++) {
@@ -1276,8 +1384,10 @@
             emotionSelector.addEventListener('change', function(e) {
                 currentEmotion = e.target.value;
                 calculateMoodRotation(); // Calculate new mood rotation parameters
+                calculateHeartbeatBPM(); // Calculate new heartbeat BPM and intensity
                 updateFlowerColors();
                 updateMoodRotationDisplay(); // Update the mood rotation info display
+                updateHeartbeatDisplay(); // Update the heartbeat info display
             });
 
             // Initialize rotation info
