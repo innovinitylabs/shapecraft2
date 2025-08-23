@@ -22,6 +22,22 @@ interface FlowerArtProps {
   className?: string;
 }
 
+// Generate flower traits for gallery display
+export function generateFlowerTraits(index: number) {
+  const emotions = ['happy', 'joy', 'sad', 'fear', 'anger', 'disgust', 'shame', 'surprise', 'neutral'];
+  const emotion = emotions[index % emotions.length];
+  
+  return {
+    emotion,
+    petalCount: 6 + (index % 4),
+    layerCount: 2 + (index % 3),
+    heartbeatBPM: 60 + (index % 40),
+    heartbeatIntensity: 0.3 + (index % 7) * 0.1,
+    rotationSpeed: 0.1 + (index % 9) * 0.1,
+    rotationDirection: index % 2 === 0 ? 1 : -1
+  };
+}
+
 export default function FlowerArt({ 
   emotion = 'neutral',
   petalCount = 6,
@@ -481,7 +497,7 @@ export default function FlowerArt({
       stalkGeometry.computeVertexNormals();
       
       const stalkMaterial = new THREE.MeshPhongMaterial({
-        vertexColors: THREE.VertexColors,
+        vertexColors: true,
         side: THREE.DoubleSide,
         shininess: 10,
         flatShading: false
@@ -519,7 +535,7 @@ export default function FlowerArt({
       let layerColor = getEmotionColor(state.currentEmotion, layer);
       
       let petalMat = new THREE.MeshPhongMaterial({color: layerColor, side: THREE.DoubleSide});
-      let petalGeom = new THREE.SphereBufferGeometry(layerRadius, 20, 20, Math.PI / 3, Math.PI / 3, 0, Math.PI);
+      let petalGeom = new THREE.SphereGeometry(layerRadius, 20, 20, Math.PI / 3, Math.PI / 3, 0, Math.PI);
       petalGeom.translate(0, -layerRadius, 0);
       petalGeom.rotateX(Math.PI / 2);
       let petalMesh = new THREE.Mesh(petalGeom, petalMat);
@@ -620,7 +636,7 @@ export default function FlowerArt({
     const renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
     renderer.setSize(size, size);
     renderer.setPixelRatio(window.devicePixelRatio > 1 ? 2 : 1);
-    renderer.physicallyCorrectLights = true;
+    // renderer.physicallyCorrectLights = true; // Removed for compatibility
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.autoUpdate = false;
     rendererRef.current = renderer;
