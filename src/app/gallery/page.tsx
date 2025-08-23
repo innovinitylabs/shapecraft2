@@ -9,7 +9,11 @@ import AdvancedMoodSlider from '@/components/AdvancedMoodSlider';
 interface NFT {
   id: number;
   name: string;
-  traits: ReturnType<typeof generateFlowerTraits>;
+  traits: ReturnType<typeof generateFlowerTraits> & {
+    mood?: number;
+    collectiveMood?: number;
+    tradingActivity?: number;
+  };
   moodHistory: Array<{
     mood: number;
     timestamp: number;
