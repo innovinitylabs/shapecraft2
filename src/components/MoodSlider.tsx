@@ -79,7 +79,7 @@ export default function MoodSlider({ value, onChange, disabled = false, size = '
 
     document.addEventListener('mouseup', handleGlobalMouseUp);
     return () => document.removeEventListener('mouseup', handleGlobalMouseUp);
-  }, [isDragging, hoverValue]);
+  }, [isDragging, hoverValue, handleMouseUp]);
 
   const displayValue = isDragging ? hoverValue : value;
   const displayMood = moodData.find(mood => mood.value === displayValue) || currentMood;
@@ -142,7 +142,7 @@ export default function MoodSlider({ value, onChange, disabled = false, size = '
         <motion.div
           className="absolute top-1/2 w-6 h-6 bg-white rounded-full shadow-lg border-2 border-gray-200 cursor-pointer z-20"
           style={{
-            left: `${((displayValue - 1) / 9) * 100}%`,
+            left: `${((displayValue || 1) - 1) / 9 * 100}%`,
             transform: 'translate(-50%, -50%)',
           }}
           animate={{

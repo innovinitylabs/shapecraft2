@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Flower, Wallet, Zap, Users, Coins } from 'lucide-react';
+import { Flower, Wallet, Zap } from 'lucide-react';
 import Flower3D from '@/components/Flower3D';
 import MoodSlider from '@/components/MoodSlider';
 

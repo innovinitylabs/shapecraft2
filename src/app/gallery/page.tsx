@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Flower, Heart, Edit3, Clock, Users, Zap } from 'lucide-react';
+import { Heart, Edit3, Clock, Zap } from 'lucide-react';
 import Flower3D from '@/components/Flower3D';
 import MoodSlider from '@/components/MoodSlider';
 
@@ -336,7 +336,7 @@ export default function GalleryPage() {
                       Gas Back Available
                     </div>
                     <p className="text-sm text-gray-300">
-                      You'll receive 50% gas back for mood updates and renaming!
+                      You&apos;ll receive 50% gas back for mood updates and renaming!
                     </p>
                   </div>
                 </div>

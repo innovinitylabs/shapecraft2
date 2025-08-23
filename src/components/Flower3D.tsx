@@ -38,7 +38,7 @@ const roundCSS = (value: number): number => {
   return Math.round(value * 100) / 100;
 };
 
-export default function Flower3D({ mood, traits, isInteractive = true, size = 1 }: Flower3DProps) {
+export default function Flower3D({ mood, traits, size = 1 }: Flower3DProps) {
   const colors = getMoodColors(mood);
   const flowerType = getFlowerType(traits.coreShape);
   const petalSize = 20 + (mood * 2) + (traits.rarityTier * 3);

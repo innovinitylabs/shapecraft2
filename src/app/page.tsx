@@ -100,7 +100,7 @@ export default function Home() {
               </div>
               <h3 className="text-2xl font-bold mb-4">Mood-Driven Evolution</h3>
               <p className="text-gray-300">
-                Your flower's appearance changes based on your mood slider, creating a visual representation of your emotional journey.
+                Your flower&apos;s appearance changes based on your mood slider, creating a visual representation of your emotional journey.
               </p>
             </motion.div>
 
@@ -132,7 +132,7 @@ export default function Home() {
               </div>
               <h3 className="text-2xl font-bold mb-4">Collective Consciousness</h3>
               <p className="text-gray-300">
-                Your flower's core reflects the average mood of all holders, creating a living representation of community sentiment.
+                Your flower&apos;s core reflects the average mood of all holders, creating a living representation of community sentiment.
               </p>
             </motion.div>
           </div>
@@ -164,7 +164,7 @@ export default function Home() {
               {
                 step: "02",
                 title: "Set Your Mood",
-                description: "Use the mood slider to update your flower's appearance and track your emotional journey."
+                description: "Use the mood slider to update your flower&apos;s appearance and track your emotional journey."
               },
               {
                 step: "03",
@@ -174,7 +174,7 @@ export default function Home() {
               {
                 step: "04",
                 title: "Earn Rewards",
-                description: "Get gas-back rewards for interactions and watch your flower's history grow over time."
+                description: "Get gas-back rewards for interactions and watch your flower&apos;s history grow over time."
               }
             ].map((item, index) => (
               <motion.div

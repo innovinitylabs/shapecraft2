@@ -61,7 +61,7 @@ A revolutionary generative NFT collection where each flower is a living entity t
 - npm or yarn
 - MetaMask or compatible wallet
 
-### Installation
+### Frontend Development
 
 1. **Clone the repository**
 ```bash
@@ -69,35 +69,51 @@ git clone https://github.com/your-username/shapes-of-mind.git
 cd shapes-of-mind
 ```
 
-2. **Install dependencies**
+2. **Install frontend dependencies**
+```bash
+npm install
+```
+
+3. **Start the development server**
+```bash
+npm run dev
+```
+
+4. **Open your browser**
+Navigate to [http://localhost:3000](http://localhost:3000)
+
+### Smart Contract Development
+
+1. **Navigate to blockchain directory**
+```bash
+cd blockchain
+```
+
+2. **Install blockchain dependencies**
 ```bash
 npm install
 ```
 
 3. **Set up environment variables**
 ```bash
-cp .env.example .env.local
+cp .env.example .env
 ```
-Edit `.env.local` with your configuration:
+Edit `.env` with your configuration:
 ```env
-NEXT_PUBLIC_CONTRACT_ADDRESS=your_contract_address
-NEXT_PUBLIC_SHAPE_L2_RPC_URL=your_shape_l2_rpc_url
 PRIVATE_KEY=your_deployment_private_key
+SHAPE_L2_RPC_URL=your_shape_l2_rpc_url
+SHAPE_L2_TESTNET_RPC_URL=your_testnet_rpc_url
+ETHERSCAN_API_KEY=your_etherscan_api_key
 ```
 
 4. **Compile smart contracts**
 ```bash
-npx hardhat compile
+npm run compile
 ```
 
 5. **Deploy to Shape L2**
 ```bash
-npx hardhat run scripts/deploy.ts --network shapeL2
-```
-
-6. **Start the development server**
-```bash
-npm run dev
+npm run deploy
 ```
 
 Visit [http://localhost:3000](http://localhost:3000) to see the application.
