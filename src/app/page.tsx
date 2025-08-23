@@ -17,17 +17,17 @@ export default function Home() {
         </div>
 
         <div className="relative z-10 text-center px-4">
+          <div className="mb-6 h-48 md:h-64 flex items-center justify-center">
+            <FlowerTypingEffect
+              text="Shapes of Mind"
+              className="w-full h-full"
+            />
+          </div>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <div className="mb-6 h-48 md:h-64 flex items-center justify-center">
-              <FlowerTypingEffect
-                text="Shapes of Mind"
-                className="w-full h-full"
-              />
-            </div>
             <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto">
               Living NFT flowers that reflect your mood and the collective consciousness of our community. 
               Each flower evolves based on your emotional state and on-chain interactions.
