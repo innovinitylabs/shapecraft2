@@ -57,7 +57,7 @@ export default function InteractiveBackground() {
       }
     `;
 
-    // Fragment shader for flower drawing
+    // Fragment shader for beautiful flower drawing
     const fragmentShader = `
       uniform float u_stop_time;
       uniform vec2 u_point;
@@ -70,51 +70,86 @@ export default function InteractiveBackground() {
       
       varying vec2 vUv;
       
+      #define PI 3.14159265359
+      
+      float hash(vec2 p) {
+        return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+      }
+      
+      float noise(vec2 p) {
+        vec2 i = floor(p);
+        vec2 f = fract(p);
+        f = f * f * (3.0 - 2.0 * f);
+        return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x),
+                   mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
+      }
+      
       void main() {
         vec2 uv = vUv;
         vec4 texColor = texture2D(u_texture, uv);
         
-        // Calculate distance from current point
         vec2 point = u_point;
         float dist = distance(uv, point);
         
-        // Flower parameters
-        float petalCount = 8.0;
-        float petalLength = 0.1;
-        float petalWidth = 0.02;
-        
-        // Create flower shape
+        // Create beautiful flower with multiple layers
         float angle = atan(uv.y - point.y, uv.x - point.x);
         float radius = dist;
         
-        // Petal effect
-        float petal = sin(angle * petalCount + u_stop_randomizer.x * 10.0);
-        petal = smoothstep(0.0, 0.5, petal);
+        // Multiple petal layers for depth
+        float petalCount1 = 8.0 + u_stop_randomizer.x * 4.0;
+        float petalCount2 = 16.0 + u_stop_randomizer.y * 8.0;
         
-        // Flower shape
-        float flower = smoothstep(petalLength, 0.0, radius) * petal;
-        flower *= smoothstep(petalWidth, 0.0, abs(radius - petalLength * 0.5));
+        // Inner petals
+        float innerPetal = sin(angle * petalCount1 + u_stop_randomizer.x * PI);
+        innerPetal = smoothstep(-0.3, 0.8, innerPetal);
         
-        // Center of flower
-        float center = smoothstep(0.05, 0.0, radius);
+        // Outer petals
+        float outerPetal = sin(angle * petalCount2 + u_stop_randomizer.y * PI);
+        outerPetal = smoothstep(-0.2, 0.6, outerPetal);
         
-        // Color based on mood (purple theme for Shapes of Mind)
-        vec3 flowerColor = vec3(0.5, 0.2, 0.8); // Purple
-        vec3 centerColor = vec3(0.8, 0.4, 1.0); // Light purple
+        // Petal shapes with smooth curves
+        float innerRadius = 0.08 + 0.02 * sin(u_stop_time * 2.0);
+        float outerRadius = 0.15 + 0.03 * sin(u_stop_time * 1.5);
         
-        // Animation
-        float anim = u_moving * smoothstep(0.0, 0.1, u_stop_time);
-        flower *= anim;
-        center *= anim;
+        float innerFlower = smoothstep(innerRadius, 0.0, radius) * innerPetal;
+        float outerFlower = smoothstep(outerRadius, innerRadius * 0.7, radius) * outerPetal;
         
-        // Combine with existing texture
+        // Center with detail
+        float centerRadius = 0.03;
+        float center = smoothstep(centerRadius, 0.0, radius);
+        center += 0.3 * sin(angle * 12.0 + u_stop_time * 3.0) * smoothstep(centerRadius * 1.5, 0.0, radius);
+        
+        // Stem effect
+        float stem = 0.0;
+        if (radius > outerRadius && radius < outerRadius * 2.0) {
+          float stemAngle = mod(angle + PI, PI * 2.0) - PI;
+          stem = smoothstep(0.1, 0.0, abs(stemAngle)) * smoothstep(outerRadius * 2.0, outerRadius, radius);
+        }
+        
+        // Animation and timing
+        float anim = u_moving * smoothstep(0.0, 0.2, u_stop_time);
+        float fade = smoothstep(3.0, 0.0, u_stop_time);
+        
+        // Colors with mood variations
+        vec3 innerColor = vec3(0.8, 0.3, 1.0); // Bright purple
+        vec3 outerColor = vec3(0.6, 0.2, 0.9); // Darker purple
+        vec3 centerColor = vec3(1.0, 0.8, 1.0); // Light pink
+        vec3 stemColor = vec3(0.3, 0.8, 0.4); // Green
+        
+        // Add some color variation based on randomizer
+        innerColor += 0.1 * vec3(u_stop_randomizer.x, u_stop_randomizer.y, 0.5);
+        outerColor += 0.1 * vec3(u_stop_randomizer.y, 0.3, u_stop_randomizer.x);
+        
+        // Combine all elements
         vec3 color = texColor.rgb * u_clean;
-        color += flower * flowerColor * u_speed;
-        color += center * centerColor * u_speed;
+        color += innerFlower * innerColor * u_speed * anim * fade;
+        color += outerFlower * outerColor * u_speed * anim * fade * 0.7;
+        color += center * centerColor * u_speed * anim * fade;
+        color += stem * stemColor * u_speed * anim * fade * 0.5;
         
-        // Fade out over time
-        float fade = smoothstep(2.0, 0.0, u_stop_time);
-        color *= fade;
+        // Add subtle glow
+        float glow = smoothstep(outerRadius * 1.5, 0.0, radius) * 0.3 * anim * fade;
+        color += glow * vec3(0.8, 0.4, 1.0);
         
         gl_FragColor = vec4(color, 1.0);
       }
@@ -218,15 +253,24 @@ export default function InteractiveBackground() {
     window.addEventListener("touchmove", handleTouchMove);
     window.addEventListener("resize", handleResize);
 
-    // Auto-draw some flowers
+    // Auto-draw beautiful flower patterns
     const autoDrawInterval = setInterval(() => {
-      if (Math.random() > 0.7) {
-        pointer.x = Math.random();
-        pointer.y = Math.random();
-        pointer.moved = true;
-        pointer.speed = 0.5 + Math.random() * 0.5;
+      if (Math.random() > 0.6) {
+        // Create flower clusters
+        const centerX = 0.3 + Math.random() * 0.4;
+        const centerY = 0.3 + Math.random() * 0.4;
+        
+        // Draw multiple flowers in a cluster
+        for (let i = 0; i < 3 + Math.floor(Math.random() * 3); i++) {
+          setTimeout(() => {
+            pointer.x = centerX + (Math.random() - 0.5) * 0.2;
+            pointer.y = centerY + (Math.random() - 0.5) * 0.2;
+            pointer.moved = true;
+            pointer.speed = 0.8 + Math.random() * 0.4;
+          }, i * 200);
+        }
       }
-    }, 2000);
+    }, 1500);
 
     return () => {
       // Cleanup
