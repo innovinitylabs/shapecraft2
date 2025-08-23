@@ -919,6 +919,7 @@ export default function FlowerArt({
         }
       }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [moodParams, emotion, petalCount, layerCount, heartbeatBPM, heartbeatIntensity, rotationSpeed, rotationDirection, size]);
 
   return (

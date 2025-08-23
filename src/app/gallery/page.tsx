@@ -161,7 +161,7 @@ export default function GalleryPage() {
                       <span className="text-sm text-gray-400">Current Mood</span>
                     </div>
                     <div className="text-xl font-semibold">
-                      {['Devastated', 'Depressed', 'Sad', 'Disappointed', 'Neutral', 'Content', 'Happy', 'Excited', 'Elated', 'Euphoric'][selectedNFT.traits.mood - 1]}
+                      {['Devastated', 'Depressed', 'Sad', 'Disappointed', 'Neutral', 'Content', 'Happy', 'Excited', 'Elated', 'Euphoric'][(selectedNFT.traits.mood || 5) - 1]}
                     </div>
                   </div>
                   <div className="bg-gray-900/30 rounded-xl p-4 border border-gray-700">
