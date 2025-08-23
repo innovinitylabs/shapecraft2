@@ -734,7 +734,7 @@ export default function FlowerArt({
 
     // Camera
     const camera = new THREE.PerspectiveCamera(40, size / size, 0.1, 1000);
-    camera.position.set(0, 70, 140);
+    camera.position.set(0, 50, 120);
 
     // Lights
     const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
@@ -795,7 +795,7 @@ export default function FlowerArt({
   return (
     <div 
       ref={containerRef} 
-      className={`relative ${className}`}
+      className={`relative flex items-center justify-center ${className}`}
       style={{ width: size, height: size }}
     />
   );

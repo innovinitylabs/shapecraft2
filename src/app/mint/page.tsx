@@ -58,9 +58,9 @@ export default function MintPage() {
       {/* Main Content */}
       <div className="relative z-10 flex-1">
         <div className="container mx-auto px-4 py-8">
-          <div className="grid lg:grid-cols-2 gap-8 items-start">
+          <div className="max-w-4xl mx-auto space-y-8">
             
-            {/* Left Side - Mood Input & Preview */}
+            {/* Mood Input & Preview */}
             <div className="space-y-8">
               <AnimatePresence mode="wait">
                 {mintStep === 'input' && (
@@ -156,32 +156,29 @@ export default function MintPage() {
               </AnimatePresence>
             </div>
 
-            {/* Right Side - Flower Preview */}
-            <div className="relative">
-              <div className="sticky top-8">
-                <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
-                  <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
-                    <Flower className="mr-2" />
-                    Flower Preview
-                  </h3>
-                  
-                  <div className="relative h-96 bg-black/20 rounded-xl overflow-hidden">
-                    {moodParams ? (
-                      <FlowerArt
-                        moodParams={moodParams}
-                        className="w-full h-full"
-                      />
-                    ) : (
-                      <div className="flex items-center justify-center h-full">
-                        <div className="text-center text-white/50">
-                          <Flower size={48} className="mx-auto mb-4 opacity-50" />
-                          <p>Your flower will appear here</p>
-                          <p className="text-sm">Describe your mood to generate a unique flower</p>
-                        </div>
-                      </div>
-                    )}
+            {/* Flower Preview - Full Width Below */}
+            <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
+              <h3 className="text-2xl font-semibold text-white mb-6 flex items-center justify-center">
+                <Flower className="mr-3" size={28} />
+                Your Living Flower
+              </h3>
+              
+              <div className="relative h-[600px] bg-black/20 rounded-xl overflow-hidden flex items-center justify-center">
+                {moodParams ? (
+                  <FlowerArt
+                    moodParams={moodParams}
+                    size={500}
+                    className="w-full h-full"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-center text-white/50">
+                      <Flower size={64} className="mx-auto mb-6 opacity-50" />
+                      <p className="text-lg mb-2">Your flower will appear here</p>
+                      <p className="text-sm">Describe your mood to generate a unique flower</p>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
