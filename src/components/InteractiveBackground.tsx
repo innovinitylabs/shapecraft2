@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import * as THREE from 'three';
 
-// Interactive particle animation based on https://codepen.io/sol187/pen/zYJgyQB
-// Original author credit: @sol187
+// Interactive flower drawing background
+// Based on Three.js shader-based flower drawing system
 export default function InteractiveBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -14,181 +15,229 @@ export default function InteractiveBackground() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    // Three.js setup
+    const renderer = new THREE.WebGLRenderer({
+      canvas: canvas,
+      alpha: true,
+      antialias: true
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
 
-    let animationId: number;
-    let particles: Particle[] = [];
-    const mouse = { x: 0, y: 0 };
+    const sceneShader = new THREE.Scene();
+    const sceneBasic = new THREE.Scene();
+    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 10);
+    const clock = new THREE.Clock();
 
-    // Set canvas size
-    const setCanvasSize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+    // Pointer state
+    const pointer = {
+      x: 0.5,
+      y: 0.6,
+      moved: false,
+      speed: 0,
+      drawingAllowed: true,
     };
 
-    setCanvasSize();
+    // Render targets for feedback
+    const renderTargets = [
+      new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight),
+      new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight)
+    ];
 
-    class Particle {
-      x: number;
-      y: number;
-      vx: number;
-      vy: number;
-      radius: number;
-      color: string;
-      opacity: number;
-      originalX: number;
-      originalY: number;
+    // Shader materials
+    let basicMaterial: THREE.MeshBasicMaterial;
+    let shaderMaterial: THREE.ShaderMaterial;
 
-      constructor(x: number, y: number) {
-        this.x = x;
-        this.y = y;
-        this.originalX = x;
-        this.originalY = y;
-        this.vx = (Math.random() - 0.5) * 2;
-        this.vy = (Math.random() - 0.5) * 2;
-        this.radius = Math.random() * 3 + 1;
-        
-        // Mood-inspired colors matching our design
-        const colors = [
-          '#8B5CF6', // Purple
-          '#3B82F6', // Blue
-          '#EC4899', // Pink
-          '#10B981', // Green
-          '#F59E0B', // Yellow
-          '#EF4444', // Red
-        ];
-        this.color = colors[Math.floor(Math.random() * colors.length)];
-        this.opacity = Math.random() * 0.8 + 0.2;
+    // Vertex shader
+    const vertexShader = `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
       }
+    `;
 
-      update() {
-        // Mouse interaction
-        const dx = mouse.x - this.x;
-        const dy = mouse.y - this.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        const maxDistance = 150;
-
-        if (distance < maxDistance) {
-          const force = (maxDistance - distance) / maxDistance;
-          const forceDirectionX = dx / distance;
-          const forceDirectionY = dy / distance;
-          
-          this.vx += forceDirectionX * force * 0.3;
-          this.vy += forceDirectionY * force * 0.3;
-        }
-
-        // Return to original position
-        const returnForce = 0.03;
-        this.vx += (this.originalX - this.x) * returnForce;
-        this.vy += (this.originalY - this.y) * returnForce;
-
-        // Apply velocity
-        this.x += this.vx;
-        this.y += this.vy;
-
-        // Damping
-        this.vx *= 0.95;
-        this.vy *= 0.95;
-
-        // Breathing effect
-        this.opacity = 0.3 + Math.sin(Date.now() * 0.003 + this.x * 0.01) * 0.3;
+    // Fragment shader for flower drawing
+    const fragmentShader = `
+      uniform float u_stop_time;
+      uniform vec2 u_point;
+      uniform float u_moving;
+      uniform float u_speed;
+      uniform vec2 u_stop_randomizer;
+      uniform float u_clean;
+      uniform float u_ratio;
+      uniform sampler2D u_texture;
+      
+      varying vec2 vUv;
+      
+      void main() {
+        vec2 uv = vUv;
+        vec4 texColor = texture2D(u_texture, uv);
+        
+        // Calculate distance from current point
+        vec2 point = u_point;
+        float dist = distance(uv, point);
+        
+        // Flower parameters
+        float petalCount = 8.0;
+        float petalLength = 0.1;
+        float petalWidth = 0.02;
+        
+        // Create flower shape
+        float angle = atan(uv.y - point.y, uv.x - point.x);
+        float radius = dist;
+        
+        // Petal effect
+        float petal = sin(angle * petalCount + u_stop_randomizer.x * 10.0);
+        petal = smoothstep(0.0, 0.5, petal);
+        
+        // Flower shape
+        float flower = smoothstep(petalLength, 0.0, radius) * petal;
+        flower *= smoothstep(petalWidth, 0.0, abs(radius - petalLength * 0.5));
+        
+        // Center of flower
+        float center = smoothstep(0.05, 0.0, radius);
+        
+        // Color based on mood (purple theme for Shapes of Mind)
+        vec3 flowerColor = vec3(0.5, 0.2, 0.8); // Purple
+        vec3 centerColor = vec3(0.8, 0.4, 1.0); // Light purple
+        
+        // Animation
+        float anim = u_moving * smoothstep(0.0, 0.1, u_stop_time);
+        flower *= anim;
+        center *= anim;
+        
+        // Combine with existing texture
+        vec3 color = texColor.rgb * u_clean;
+        color += flower * flowerColor * u_speed;
+        color += center * centerColor * u_speed;
+        
+        // Fade out over time
+        float fade = smoothstep(2.0, 0.0, u_stop_time);
+        color *= fade;
+        
+        gl_FragColor = vec4(color, 1.0);
       }
+    `;
 
-      draw() {
-        if (!ctx) return;
-        
-        ctx.save();
-        ctx.globalAlpha = this.opacity;
-        ctx.fillStyle = this.color;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Glow effect
-        ctx.shadowColor = this.color;
-        ctx.shadowBlur = 10;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius * 0.5, 0, Math.PI * 2);
-        ctx.fill();
-        
-        ctx.restore();
-      }
+    function createPlane() {
+      shaderMaterial = new THREE.ShaderMaterial({
+        uniforms: {
+          u_stop_time: { value: 0.0 },
+          u_point: { value: new THREE.Vector2(pointer.x, pointer.y) },
+          u_moving: { value: 0.0 },
+          u_speed: { value: 0.0 },
+          u_stop_randomizer: { value: new THREE.Vector2(Math.random(), Math.random()) },
+          u_clean: { value: 0.98 },
+          u_ratio: { value: window.innerWidth / window.innerHeight },
+          u_texture: { value: null }
+        },
+        vertexShader: vertexShader,
+        fragmentShader: fragmentShader
+      });
+      
+      basicMaterial = new THREE.MeshBasicMaterial();
+
+      const planeGeometry = new THREE.PlaneGeometry(2, 2);
+      const planeBasic = new THREE.Mesh(planeGeometry, basicMaterial);
+      const planeShader = new THREE.Mesh(planeGeometry, shaderMaterial);
+      sceneBasic.add(planeBasic);
+      sceneShader.add(planeShader);
     }
 
-    const createParticles = () => {
-      particles = [];
-      const particleCount = Math.min(150, (canvas.width * canvas.height) / 10000);
+    function render() {
+      shaderMaterial.uniforms.u_point.value = new THREE.Vector2(pointer.x, 1 - pointer.y);
+      shaderMaterial.uniforms.u_texture.value = renderTargets[0].texture;
+      shaderMaterial.uniforms.u_ratio.value = window.innerWidth / window.innerHeight;
       
-      for (let i = 0; i < particleCount; i++) {
-        const x = Math.random() * canvas.width;
-        const y = Math.random() * canvas.height;
-        particles.push(new Particle(x, y));
+      if (pointer.moved) {
+        shaderMaterial.uniforms.u_moving.value = 1.0;
+        shaderMaterial.uniforms.u_stop_randomizer.value = new THREE.Vector2(Math.random(), Math.random());
+        shaderMaterial.uniforms.u_stop_time.value = 0.0;
+        pointer.moved = false;
+      } else {
+        shaderMaterial.uniforms.u_moving.value = 0.0;
       }
-    };
-
-    const drawConnections = () => {
-      if (!ctx) return;
       
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const dx = particles[i].x - particles[j].x;
-          const dy = particles[i].y - particles[j].y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          
-          if (distance < 100) {
-            ctx.save();
-            ctx.globalAlpha = (100 - distance) / 100 * 0.2;
-            ctx.strokeStyle = '#8B5CF6';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(particles[i].x, particles[i].y);
-            ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.stroke();
-            ctx.restore();
-          }
-        }
-      }
-    };
+      shaderMaterial.uniforms.u_stop_time.value += clock.getDelta();
+      shaderMaterial.uniforms.u_speed.value = pointer.speed;
 
-    const animate = () => {
-      if (!ctx) return;
-      
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      renderer.setRenderTarget(renderTargets[1]);
+      renderer.render(sceneShader, camera);
 
-      drawConnections();
+      basicMaterial.map = renderTargets[1].texture;
 
-      particles.forEach(particle => {
-        particle.update();
-        particle.draw();
-      });
+      renderer.setRenderTarget(null);
+      renderer.render(sceneBasic, camera);
 
-      animationId = requestAnimationFrame(animate);
-    };
+      // Swap render targets
+      const tmp = renderTargets[0];
+      renderTargets[0] = renderTargets[1];
+      renderTargets[1] = tmp;
 
+      requestAnimationFrame(render);
+    }
+
+    function updateSize() {
+      shaderMaterial.uniforms.u_ratio.value = window.innerWidth / window.innerHeight;
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    // Event listeners
     const handleMouseMove = (e: MouseEvent) => {
-      mouse.x = e.clientX;
-      mouse.y = e.clientY;
+      if (pointer.drawingAllowed) {
+        pointer.moved = true;
+        const dx = 12 * (e.pageX / window.innerWidth - pointer.x);
+        const dy = 12 * (e.pageY / window.innerHeight - pointer.y);
+        pointer.x = e.pageX / window.innerWidth;
+        pointer.y = e.pageY / window.innerHeight;
+        pointer.speed = Math.min(2, Math.pow(dx, 2) + Math.pow(dy, 2));
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      pointer.moved = true;
+      const dx = 5 * (e.targetTouches[0].pageX / window.innerWidth - pointer.x);
+      const dy = 5 * (e.targetTouches[0].pageY / window.innerHeight - pointer.y);
+      pointer.x = e.targetTouches[0].pageX / window.innerWidth;
+      pointer.y = e.targetTouches[0].pageY / window.innerHeight;
+      pointer.speed = Math.min(2, Math.pow(dx, 2) + Math.pow(dy, 2));
     };
 
     const handleResize = () => {
-      setCanvasSize();
-      createParticles();
+      updateSize();
     };
 
     // Initialize
-    createParticles();
-    animate();
+    createPlane();
+    updateSize();
+    render();
 
-    // Event listeners
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('resize', handleResize);
+    // Add event listeners
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("touchmove", handleTouchMove);
+    window.addEventListener("resize", handleResize);
+
+    // Auto-draw some flowers
+    const autoDrawInterval = setInterval(() => {
+      if (Math.random() > 0.7) {
+        pointer.x = Math.random();
+        pointer.y = Math.random();
+        pointer.moved = true;
+        pointer.speed = 0.5 + Math.random() * 0.5;
+      }
+    }, 2000);
 
     return () => {
-      cancelAnimationFrame(animationId);
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('resize', handleResize);
+      // Cleanup
+      clearInterval(autoDrawInterval);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("resize", handleResize);
+      
+      // Dispose of Three.js resources
+      renderer.dispose();
+      renderTargets.forEach(target => target.dispose());
     };
   }, []);
 

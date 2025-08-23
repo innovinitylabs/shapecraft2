@@ -238,11 +238,12 @@ export default function Home() {
               </span>
               {/* Credits Tooltip */}
               <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-xs text-gray-300 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
-                <div className="mb-1 font-semibold text-purple-400">Credits:</div>
-                <div>Interactive background: <a href="https://codepen.io/sol187/pen/zYJgyQB" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300">@sol187</a></div>
-                <div>Icons: <a href="https://lucide.dev" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300">Lucide</a></div>
-                <div>Framework: <a href="https://nextjs.org" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300">Next.js</a></div>
-                <div>Animations: <a href="https://framer.com/motion" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300">Framer Motion</a></div>
+                               <div className="mb-1 font-semibold text-purple-400">Credits:</div>
+               <div>Flower drawing system: <a href="https://codepen.io/sol187/pen/zYJgyQB" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300">@sol187</a></div>
+               <div>3D Graphics: <a href="https://threejs.org" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300">Three.js</a></div>
+               <div>Icons: <a href="https://lucide.dev" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300">Lucide</a></div>
+               <div>Framework: <a href="https://nextjs.org" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300">Next.js</a></div>
+               <div>Animations: <a href="https://framer.com/motion" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300">Framer Motion</a></div>
                 {/* Arrow pointing down */}
                 <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
               </div>
