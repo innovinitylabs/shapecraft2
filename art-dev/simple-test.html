@@ -94,8 +94,8 @@
     <div id="controls">
         <div class="control-group">
             <label>Petal Rotation:</label>
-            <input type="range" id="petal-slider" min="0" max="1" value="0" step="0.01">
-            <span id="slider-value">0</span>
+            <input type="range" id="petal-slider" min="0.1" max="1" value="0.1" step="0.01">
+            <span id="slider-value">18.0°</span>
         </div>
         <div class="control-group">
             <label>Petal Count:</label>
@@ -129,6 +129,31 @@
             <input type="range" id="stalk-slider" min="0" max="20" value="5" step="0.5">
             <span id="stalk-value">5.0</span>
         </div>
+        <div class="control-group">
+            <label>Bee Scale:</label>
+            <input type="range" id="bee-scale-slider" min="0.1" max="2" value="0.5" step="0.1">
+            <span id="bee-scale-value">0.5</span>
+        </div>
+        <div class="control-group">
+            <label>Bee Position X:</label>
+            <input type="range" id="bee-x-slider" min="-10" max="10" value="0" step="0.5">
+            <span id="bee-x-value">0.0</span>
+        </div>
+        <div class="control-group">
+            <label>Bee Position Y:</label>
+            <input type="range" id="bee-y-slider" min="-5" max="10" value="2" step="0.5">
+            <span id="bee-y-value">2.0</span>
+        </div>
+        <div class="control-group">
+            <label>Bee Position Z:</label>
+            <input type="range" id="bee-z-slider" min="-10" max="10" value="0" step="0.5">
+            <span id="bee-z-value">0.0</span>
+        </div>
+        <div class="control-group">
+            <label>Wing Flap Speed:</label>
+            <input type="range" id="wing-speed-slider" min="5" max="30" value="18" step="1">
+            <span id="wing-speed-value">18</span>
+        </div>
     </div>
 
     <div id="container-scene">
@@ -151,7 +176,7 @@
     <script>
         let container, scene, camera, renderer;
 
-        let petalRotation = 0;
+        let petalRotation = 0.05; // Initial value for 18 degrees (0.1 * 0.5 = 0.05)
 
         let petalMeshes,
             petalCount = 6,
@@ -162,6 +187,15 @@
         let layerOffsets = [0, 0]; // Angular offset for each layer
         let stalkLength = 5;
         let stalkMesh = null;
+        let connectorMesh = null;
+        
+        // Bee variables
+        let bee = null;
+        let leftWing = null;
+        let rightWing = null;
+        let beeScale = 0.5;
+        let beePosition = { x: 0, y: 2, z: 0 };
+        let wingSpeed = 18;
 
         function init() {
             container = document.querySelector("#container-scene");
@@ -172,9 +206,10 @@
             camera.position.set(0, 70, 140);
 
             // lights
-            const dirLight = new THREE.DirectionalLight(0xff00ff, 2);
-            dirLight.position.set(20, 0, 55);
-            const hemLight = new THREE.HemisphereLight(0xffffbb, 0x080820, 3);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
+            dirLight.position.set(20, 10, 30);
+            dirLight.castShadow = true;
+            const hemLight = new THREE.HemisphereLight(0xffffbb, 0x080820, 2);
             scene.add(dirLight, hemLight);
 
             // controls
@@ -232,17 +267,574 @@
             }
             
             updateLayerSelector();
+            createConnector();
             createStalk();
+            createBee();
+        }
+        
+        // ========================================
+        // BEE CREATION FUNCTION - FULLY COMMENTED
+        // ========================================
+        // 
+        // QUICK REFERENCE FOR MANUAL ADJUSTMENTS:
+        // ========================================
+        // BODY: Change 0.3 (radius), 1.8 (horizontal elongation), 0xffd66b (yellow color)
+        // STRIPES: Change 0.04 (thickness), 0.8 (spacing), 0x0a0a0a (black color)
+        // HEAD: Change 0.18 (size), 0.0,0.7 (position), 0x222222 (color)
+        // EYES: Change 0.05 (size), -0.08,0.08 (spacing), 0.08,0.85 (position)
+        // ANTENNAE: Change 0.008 (thickness), 0.3 (length), 0.4,-0.3 (rotation)
+        // WINGS: Change 0xeef6ff (color), 0.6 (opacity), 0.4,0.6 (size), 0.4 (distance)
+        // STINGER: Change 0.04 (thickness), 0.15 (length), -0.3,-0.6 (position)
+        // ANIMATION: Change 1.2 (bob speed), 0.08 (bob size), 0.3 (rotation speed)
+        // ========================================
+        function createBee() {
+            // Remove existing bee if it exists
+            if (bee) {
+                scene.remove(bee);
+                bee = null;
+            }
+            
+            // Create bee group (container for all bee parts)
+            bee = new THREE.Group();
+            scene.add(bee);
+            
+            // ========================================
+            // BODY SECTION
+            // ========================================
+            // Body (elongated ellipsoid) - MAIN BEE BODY
+            // ADJUSTABLE PARAMETERS:
+            // - 0.3 = body radius (make larger/smaller for bigger/smaller bee)
+            // - 16, 12 = geometry segments (higher = smoother, lower = more angular)
+            // - 1, 1, 1.8 = scale (X, Y, Z) - Z=1.8 makes it horizontally elongated
+            const bodyGeom = new THREE.SphereGeometry(0.3, 16, 12);
+            bodyGeom.scale(1, 1, 1.8); // Z scale controls horizontal elongation (1.8 = elongated, 1.0 = round)
+            
+            // Body material - YELLOW BEE COLOR
+            // ADJUSTABLE: 0xffd66b = yellow color (change hex value)
+            // ADJUSTABLE: 0.6 = roughness (0.0 = shiny, 1.0 = matte)
+            const bodyMat = new THREE.MeshStandardMaterial({color: 0xffd66b, roughness: 0.3, metalness: 0.1});
+            const body = new THREE.Mesh(bodyGeom, bodyMat);
+            body.castShadow = true; // Enable shadow casting
+            bee.add(body);
+            
+            // ========================================
+            // STRIPES SECTION - BLACK BANDS ON BODY
+            // ========================================
+            // Stripes: four black rings for better bee appearance
+            // ADJUSTABLE PARAMETERS:
+            // - 0x0a0a0a = black color (change for different stripe color)
+            // - 0.7 = roughness of stripes
+            const stripeMat = new THREE.MeshStandardMaterial({color: 0x0a0a0a, roughness: 0.7});
+            
+            // Create stripes that are directly on the body surface with better spacing
+            // ADJUSTABLE PARAMETERS:
+            // - -1.0 to 1.0 = stripe positions along body (Z axis - now horizontal)
+            // - 0.5 = spacing between stripes (better separation)
+            // - 0.02 = stripe thickness (thicker/thinner bands)
+            // - 0.3 = Z position multiplier for each stripe
+            for (let i = -1.0; i <= 1.0; i += 0.5) {
+                // Calculate the body radius at this position (body is oval, so radius varies)
+                // Custom size mapping for better visual balance
+                let bodyRadiusAtPosition;
+                if (i === 0) {
+                    // Middle stripe - smaller
+                    bodyRadiusAtPosition = 0.32;
+                } else if (Math.abs(i) === 1.0) {
+                    // Outermost stripes - larger
+                    bodyRadiusAtPosition = 0.26;
+                } else {
+                    // Middle stripes - medium
+                    bodyRadiusAtPosition = 0.30;
+                }
+                
+                // Create a cylinder that sits directly on the body surface
+                const stripe = new THREE.Mesh(new THREE.CylinderGeometry(bodyRadiusAtPosition, bodyRadiusAtPosition, 0.02, 16), stripeMat);
+                stripe.rotation.x = Math.PI / 2; // Rotate to wrap around body circumference
+                stripe.position.z = i * 0.3; // Position along body length (Z axis)
+                stripe.position.y = 0; // Position directly on body surface
+                // Scale the stripe to match the oval body shape at this position
+                stripe.scale.set(1, 1.8, 1); // Match the body's oval scale
+                body.add(stripe);
+            }
+            
+            // ========================================
+            // HEAD SECTION
+            // ========================================
+            // Head (attached to body) - BEE HEAD
+            // ADJUSTABLE PARAMETERS:
+            // - 0.18 = head radius (make larger/smaller)
+            // - 12, 10 = geometry segments
+            // - 0x222222 = dark gray/black head color
+            const head = new THREE.Mesh(
+                new THREE.SphereGeometry(0.18, 12, 10), 
+                new THREE.MeshStandardMaterial({color: 0x222222, roughness: 0.6})
+            );
+            // ADJUSTABLE: Head position relative to body
+            // - 0 = center X
+            // - 0.0 = Y position (higher = further from body center)
+            // - 0.7 = Z position (forward/backward - now at front of elongated body)
+            head.position.set(0, 0.0, 0.7); // Positioned at front of elongated body
+            head.castShadow = true;
+            bee.add(head);
+            
+            // ========================================
+            // EYES SECTION
+            // ========================================
+            // Eyes (simple black spheres)
+            // ADJUSTABLE PARAMETERS:
+            // - 0.05 = eye radius (make larger/smaller)
+            // - 8, 6 = geometry segments
+            // - 0x111111 = black eye color
+            const eyeGeom = new THREE.SphereGeometry(0.05, 8, 6);
+            const eyeMat = new THREE.MeshStandardMaterial({color: 0x111111});
+            const leftEye = new THREE.Mesh(eyeGeom, eyeMat);
+            // ADJUSTABLE: Eye positions on head
+            // - -0.08, 0.08 = left/right position (X axis)
+            // - 0.08 = Y position (height on head)
+            // - 0.85 = Z position (forward/backward on head - front of head)
+            leftEye.position.set(-0.08, 0.08, 0.85);
+            const rightEye = leftEye.clone();
+            rightEye.position.x = 0.08; // Mirror right eye
+            bee.add(leftEye, rightEye);
+            
+            // ========================================
+            // ANTENNAE SECTION
+            // ========================================
+            // Antennae (attached to head) - BEE FEELERS
+            function makeAntenna(side = 1) {
+                // ADJUSTABLE PARAMETERS:
+                // - 0.008 = antenna radius (thickness)
+                // - 0.3 = antenna length
+                // - 6 = geometry segments
+                // - 0x111111 = black antenna color
+                const geom = new THREE.CylinderGeometry(0.008, 0.008, 0.3, 6);
+                const mat = new THREE.MeshStandardMaterial({color: 0x111111});
+                const mesh = new THREE.Mesh(geom, mat);
+                
+                // ADJUSTABLE: Antenna rotation and position
+                // - side * 0.4 = Z rotation (left/right angle)
+                // - -0.3 = X rotation (forward/backward angle)
+                // - side * 0.05 = X position (left/right on head)
+                // - 0.2 = Y position (height on head)
+                // - 0.9 = Z position (forward/backward on head - front of head)
+                mesh.rotation.z = side * 0.4; // Side angle
+                mesh.rotation.x = 0.3; // Point slightly forward
+                mesh.position.set(side * -0.05, 0.2, 0.8); // Attached to front of head
+                return mesh;
+            }
+            bee.add(makeAntenna(1), makeAntenna(-1)); // Add left and right antennae
+            
+            // ========================================
+            // WINGS SECTION
+            // ========================================
+            // Wings (4 wings - 2 on each side with proper bee wing shape)
+            // ADJUSTABLE PARAMETERS:
+            // - 0xeef6ff = light blue wing color
+            // - 0.8 = opacity (0.0 = invisible, 1.0 = solid)
+            // - 0.0 = metalness (0.0 = plastic, 1.0 = metallic)
+            // - 0.3 = roughness (0.0 = smooth, 1.0 = rough)
+            const wingMat = new THREE.MeshStandardMaterial({
+                color: 0xeef6ff, 
+                opacity: 0.6, 
+                transparent: true, 
+                side: THREE.DoubleSide, 
+                metalness: 0.0, 
+                roughness: 0.1
+            });
+            
+            // Create wing geometry with bee-like shape (oval with pointed tip)
+            function createWingGeometry() {
+                const shape = new THREE.Shape();
+                // ADJUSTABLE: Wing shape points (creates oval with pointed tip)
+                // These points define the wing outline - modify for different wing shapes
+                shape.moveTo(0, 0);
+                shape.quadraticCurveTo(0.3, 0.1, 0.5, 0.2);
+                shape.quadraticCurveTo(0.6, 0.4, 0.5, 0.6);
+                shape.quadraticCurveTo(0.3, 0.7, 0, 0.6);
+                shape.quadraticCurveTo(-0.3, 0.7, -0.5, 0.6);
+                shape.quadraticCurveTo(-0.6, 0.4, -0.5, 0.2);
+                shape.quadraticCurveTo(-0.3, 0.1, 0, 0);
+                
+                const geometry = new THREE.ShapeGeometry(shape);
+                // ADJUSTABLE: Wing size scaling
+                // - 0.4 = X scale (width)
+                // - 0.6 = Y scale (height)
+                // - 1 = Z scale (depth)
+                geometry.scale(0.4, 0.6, 1); // Scale to bee size
+                return geometry;
+            }
+            
+            function makeWing(side = 1, wingSet = 1) {
+                const wingGeom = createWingGeometry();
+                const mesh = new THREE.Mesh(wingGeom, wingMat);
+                
+                // ADJUSTABLE: Wing positioning on body
+                // - 0.35 = base distance from body center
+                // - (wingSet - 1) * 0.1 = spacing between front/back wings
+                // - 0.4 = base Y position (height on body)
+                // - (wingSet - 1) * 0.15 = Y spacing between wing pairs
+                // - 0.5 = Z position (0 = center, positive = toward head, negative = toward tail)
+                const xOffset = side * (0.4 + (wingSet - 1) * 0.15);
+                const yOffset = 0.15 + (wingSet - 1) * 0.2;
+                const zOffset = 0.5; // Move wings 0.5 units toward the head
+                
+                mesh.position.set(xOffset, yOffset, zOffset);
+                // ADJUSTABLE: Wing rotation
+                // - 0 = X rotation
+                // - side * 0.4 = Y rotation (angle outward from body)
+                // - 0.3 = Z rotation (tilt)
+                mesh.rotation.set(-.69, side * 0.4, 0.3);
+                
+                return mesh;
+            }
+            
+            // Create 4 wings (2 on each side)
+            leftWing = makeWing(-.8, 1); // Left side, front wing
+            rightWing = makeWing(.8, 1); // Right side, front wing
+            const leftWing2 = makeWing(-.9, 2); // Left side, back wing
+            const rightWing2 = makeWing(.9, 2); // Right side, back wing
+            
+            bee.add(leftWing, rightWing, leftWing2, rightWing2);
+            
+            // Store all wings for animation
+            bee.userData.wings = [leftWing, rightWing, leftWing2, rightWing2];
+            
+            // ========================================
+            // STINGER SECTION
+            // ========================================
+            // Tail stinger (cone) - BEE STINGER
+            // ADJUSTABLE PARAMETERS:
+            // - 0.04 = stinger radius (thickness)
+            // - 0.15 = stinger length
+            // - 8 = geometry segments
+            // - 0x111111 = black stinger color
+            const stinger = new THREE.Mesh(
+                new THREE.ConeGeometry(0.04, 0.13, 8), 
+                new THREE.MeshStandardMaterial({color: 0x111111})
+            );
+            // ADJUSTABLE: Stinger position
+            // - 0 = center X
+            // - -0.3 = Y position (bottom of body)
+            // - -0.6 = Z position (back of elongated body)
+            stinger.position.set(0, -0.15, -0.5);
+            stinger.rotation.x = Math.PI; // Point downward
+            bee.add(stinger);
+            
+                                // ========================================
+                    // LEGS SECTION - COMPLETE ADJUSTMENT GUIDE
+                    // ========================================
+                    // 
+                    // LEG SET POSITIONING (Main positioning for entire leg sets):
+                    // ========================================
+                    // Front Leg Set:   frontLegSet.position.set(0, -0.28, -0.05)
+                    // Middle Leg Set:  middleLegSet.position.set(0, -0.28, 0.15)  
+                    // Rear Leg Set:    rearLegSet.position.set(0, -0.18, 0.35)
+                    // 
+                    // LEG APPEARANCE ADJUSTMENTS:
+                    // ========================================
+                    // - 0.015 = leg thickness/radius (0.008 = thin, 0.015 = thick, 0.02 = very thick)
+                    // - 0x8B4513 = brown color (change hex value for different colors)
+                    // - 0.8 = roughness (0.0 = shiny, 1.0 = matte)
+                    // 
+                    // LEG GAP ADJUSTMENTS:
+                    // ========================================
+                    // - side * 0.1 = gap between left and right legs (0.1 = 0.2 total gap)
+                    // - Increase 0.1 to make legs further apart
+                    // - Decrease 0.1 to make legs closer together
+                    // ========================================
+                    
+                    function createLegSet(legPosition = 0) {
+                        // ========================================
+                        // LEG SET CREATION - BOTH LEFT AND RIGHT LEGS
+                        // ========================================
+                        // Creates a group containing both left and right legs for the same position
+                        // legPosition = 0 (front), 1 (middle), 2 (rear)
+                        // ADJUSTABLE: Change legPosition to create different leg sets
+                        
+                        const legSetGroup = new THREE.Group();
+                        
+                        // Create left leg (side = -1)
+                        const leftLeg = createCurvedLeg(-1, legPosition);
+                        legSetGroup.add(leftLeg);
+                        
+                        // Create right leg (side = 1) 
+                        const rightLeg = createCurvedLeg(1, legPosition);
+                        legSetGroup.add(rightLeg);
+                        
+                        return legSetGroup;
+                    }
+                    
+                    function createCurvedLeg(side = 1, legPosition = 0) {
+                        // ========================================
+                        // INDIVIDUAL LEG CREATION FUNCTION
+                        // ========================================
+                        // Creates a single curved leg (left or right)
+                        // ADJUSTABLE PARAMETERS:
+                        // - side = -1 (left leg), side = 1 (right leg)
+                        // - legPosition = 0 (front), 1 (middle), 2 (rear)
+                        
+                        // ========================================
+                        // LEG MATERIAL SETUP
+                        // ========================================
+                        // ADJUSTABLE: 0x8B4513 = brown color (change hex value for different colors)
+                        // ADJUSTABLE: 0.8 = roughness (0.0 = shiny, 1.0 = matte)
+                        const legMat = new THREE.MeshStandardMaterial({color: 0x8B4513, roughness: 0.8});
+                        
+                        // ========================================
+                        // LEG ATTACHMENT POSITION ON BODY
+                        // ========================================
+                        // NOTE: These position calculations are no longer used
+                        // Leg positioning is now handled by the leg set positioning
+                        // These values are kept for reference but not applied
+                        const legX = side * 0.2; // Side position (closer to body) - NOT USED
+                        const legY = -0.28 + (legPosition * 0.15); // Vertical position along body - NOT USED
+                        const legZ = -0.05 + (legPosition * 0.2); // Forward/back position (moved back) - NOT USED
+                        
+                        // ========================================
+                        // CURVE CREATION - CUBIC BEZIER CURVE3 (SPLINE SYSTEM)
+                        // ========================================
+                        // 
+                        // SPLINE SYSTEM EXPLANATION:
+                        // ========================================
+                        // CubicBezierCurve3 creates a smooth curve using 4 control points:
+                        // 1. Start point (0, 0, 0) = where leg attaches to body
+                        // 2. Control point 1 = first curve direction and intensity
+                        // 3. Control point 2 = second curve direction and intensity  
+                        // 4. End point = where leg ends
+                        //
+                        // GAP SYSTEM EXPLANATION:
+                        // ========================================
+                        // The 'side' parameter controls left vs right legs:
+                        // - side = -1 (left leg)  → x values become negative
+                        // - side = 1  (right leg) → x values become positive
+                        // - side * 0.1 = gap control (0.1 = 0.2 total gap between left and right)
+                        //
+                        // CURVE PARAMETERS (Vector3(x, y, z)):
+                        // ========================================
+                        // - x = side * 0.1 (sideways spread: creates gap between left and right legs)
+                        //   * Left leg:  side = -1, so x = -0.1 (moves left)
+                        //   * Right leg: side = 1,  so x = 0.1  (moves right)
+                        //   * Total gap: 0.1 - (-0.1) = 0.2 units between left and right legs
+                        //   * ADJUSTABLE: Change 0.1 to make legs closer/further apart
+                        //
+                        // - y = negative value (downward movement: creates hanging effect)
+                        //   * More negative = leg hangs lower
+                        //   * ADJUSTABLE: -0.05 = slight down, -0.15 = more down, -0.18 = very down
+                        //
+                        // - z = 0 (no forward/backward curve: legs hang straight down)
+                        //   * ADJUSTABLE: 0 = straight down, positive = forward curve, negative = backward curve
+                        //
+                        // SHARP TIP CREATION:
+                        // ========================================
+                        // To create sharp tips, place control point 2 closer to the end point
+                        // This creates a tighter curve near the tip for a more pointed appearance
+                        
+                        let curve;
+                        if (legPosition === 2) {
+                            // ========================================
+                            // REAR LEG (legPosition = 2) - BOTTOM-MOST LEG
+                            // ========================================
+                            // This leg should hang naturally down from the back of the body
+                            // ADJUSTABLE PARAMETERS:
+                            // - side * 0.13 = sideways spread (0.13 = wider gap for rear leg)
+                            // - -0.06 = initial downward curve (more negative = more down)
+                            // - -0.15 = middle curve (closer to end for sharp tip)
+                            // - -0.18 = end point (final leg length)
+                            // SHARP TIP: Control 2 at -0.15 creates sharp tip near end at -0.18
+                            curve = new THREE.CubicBezierCurve3(
+                                new THREE.Vector3(0, 0, 0), // Start at body attachment point
+                                new THREE.Vector3(side * 0.13, -0.06, 0), // Control 1: side spread, mostly down
+                                new THREE.Vector3(side * 0.1, -0.15, 0), // Control 2: closer to end for sharp tip
+                                new THREE.Vector3(side * 0.1, -0.18, 0) // End: side spread, final down
+                            );
+                        } else {
+                            // ========================================
+                            // FRONT & MIDDLE LEGS (legPosition = 0, 1)
+                            // ========================================
+                            // These legs should also hang down but may need different curves
+                            // ADJUSTABLE PARAMETERS:
+                            // - side * 0.1 = sideways spread (0.1 = standard gap)
+                            // - -0.05 = initial downward curve (more negative = more down)
+                            // - -0.12 = middle curve (closer to end for sharp tip)
+                            // - -0.15 = end point (final leg length)
+                            // SHARP TIP: Control 2 at -0.12 creates sharp tip near end at -0.15
+                            curve = new THREE.CubicBezierCurve3(
+                                new THREE.Vector3(0, 0, 0), // Start at body attachment point
+                                new THREE.Vector3(side * 0.1, -0.05, 0), // Control 1: side spread, mostly down
+                                new THREE.Vector3(side * 0.1, -0.12, 0), // Control 2: closer to end for sharp tip
+                                new THREE.Vector3(side * 0.1, -0.15, 0) // End: side spread, final down
+                            );
+                        }
+                        
+                        // ========================================
+                        // LEG GEOMETRY CREATION WITH SHARP TIPS
+                        // ========================================
+                        // TubeGeometry(curve, tubularSegments, radius, radialSegments, closed)
+                        // ADJUSTABLE PARAMETERS:
+                        // - 8 = tubular segments (higher = smoother curve, lower = more angular)
+                        // - 0.015 = leg radius/thickness (0.008 = thin, 0.015 = thick, 0.02 = very thick)
+                        // - 6 = radial segments (higher = smoother tube, lower = more angular)
+                        // - false = open tube (true = closed tube)
+                        const legGeom = new THREE.TubeGeometry(curve, 8, 0.013, 6, false);
+                        const legMesh = new THREE.Mesh(legGeom, legMat);
+                        
+                        // ========================================
+                        // ADD SHARP TIP (CONE) TO LEG END
+                        // ========================================
+                        // Create a cone to add a sharp tip to the leg
+                        // ADJUSTABLE PARAMETERS:
+                        // - 0.015 = cone radius (should match leg thickness)
+                        // - 0.03 = cone height (length of sharp tip)
+                        // - 6 = cone segments (higher = smoother cone)
+                        const tipGeom = new THREE.ConeGeometry(0.015, 0.03, 6);
+                        const tipMesh = new THREE.Mesh(tipGeom, legMat);
+                        
+                        // Position the tip at the end of the curve
+                        const endPoint = curve.getPointAt(1); // Get the end point of the curve
+                        tipMesh.position.copy(endPoint);
+                        
+                        // Rotate the tip to point downward (cone points up by default)
+                        tipMesh.rotation.x = Math.PI; // Rotate 180 degrees to point down
+                        
+                        // Create a group to hold both the leg and the tip
+                        const legGroup = new THREE.Group();
+                        legGroup.add(legMesh);
+                        legGroup.add(tipMesh);
+                        
+                        return legGroup;
+                    }
+                    
+                    // ========================================
+                    // LEG SETS - FRONT, MIDDLE, REAR SEPARATE
+                    // ========================================
+                    // Each leg set creates both left and right legs together
+                    // ADJUSTABLE: Change the position values for each leg set as needed
+                    
+                    // ========================================
+                    // FRONT LEG SET (both left and right)
+                    // ========================================
+                    // Creates both left and right front legs
+                    const frontLegSet = createLegSet(0); // legPosition = 0 (front)
+                    frontLegSet.position.set(0, -0.28, -0.05); // MANUAL POSITION: (x, y, z)
+                    bee.add(frontLegSet);
+                    
+                    // ========================================
+                    // MIDDLE LEG SET (both left and right)
+                    // ========================================
+                    // Creates both left and right middle legs
+                    const middleLegSet = createLegSet(1); // legPosition = 1 (middle)
+                    middleLegSet.position.set(0, -0.23, 0.15); // MANUAL POSITION: (x, y, z)
+                    bee.add(middleLegSet);
+                    
+                    // ========================================
+                    // REAR LEG SET (both left and right)
+                    // ========================================
+                    // Creates both left and right rear legs
+                    const rearLegSet = createLegSet(2); // legPosition = 2 (rear)
+                    rearLegSet.position.set(0, -0.18, 0.35); // MANUAL POSITION: (x, y, z)
+                    bee.add(rearLegSet);
+                    
+                    // Set initial position and scale
+                    updateBeeTransform();
+                }
+        
+        // ========================================
+        // BEE TRANSFORM FUNCTION
+        // ========================================
+        // Updates bee position and scale based on slider controls
+        function updateBeeTransform() {
+            if (bee) {
+                // ADJUSTABLE: Bee position (controlled by X, Y, Z sliders)
+                // - beePosition.x = left/right position
+                // - beePosition.y = up/down position  
+                // - beePosition.z = forward/backward position
+                bee.position.set(beePosition.x, beePosition.y, beePosition.z);
+                
+                // ADJUSTABLE: Bee scale (controlled by scale slider)
+                // - beeScale = overall size (0.1 = tiny, 2.0 = huge)
+                bee.scale.setScalar(beeScale);
+            }
+        }
+
+        function createConnector() {
+            // Remove existing connector if it exists
+            if (connectorMesh) {
+                scene.remove(connectorMesh);
+                connectorMesh = null;
+            }
+            
+            // Create a dynamic connector that adjusts based on petal collision
+            updateConnectorLength();
+        }
+        
+        function updateConnectorLength() {
+            // Remove existing connector
+            if (connectorMesh) {
+                scene.remove(connectorMesh);
+                connectorMesh = null;
+            }
+            
+            // Calculate optimal connector length based on petal positions
+            const petalCollisionY = calculatePetalCollisionY(); // Get the lowest Y position of all petals
+            
+            // Connector length calculation:
+            // -4.2 = stalk start position (where stalk begins)
+            // petalCollisionY = lowest point of petals (where petals end)
+            // (-4.2) - petalCollisionY = gap between petals and stalk start
+            // Math.max(0.5, ...) = ensure minimum connector length of 0.5 units
+            // Result: connector fills the gap between petals and stalk, but starts 1 unit lower
+            const connectorLength = Math.max(0.5, (-4.2) - petalCollisionY - 1); // Decreased by 1 from top
+            
+            // Create connector with dynamic length
+            const connectorGeometry = new THREE.CylinderGeometry(2, 1.2, connectorLength, 16);
+            const connectorMaterial = new THREE.MeshPhongMaterial({
+                color: 0x2d5a27, // Same green as stalk
+                shininess: 10,
+                flatShading: false
+            });
+            connectorMesh = new THREE.Mesh(connectorGeometry, connectorMaterial);
+            connectorMesh.position.y = -5.2 + (connectorLength / 2); // Position 1 unit lower (-4.2 - 1 = -5.2)
+            connectorMesh.userData.isConnector = true;
+            scene.add(connectorMesh);
+        }
+        
+        function calculatePetalCollisionY() {
+            // Find the lowest point of all petal layers considering actual geometry
+            let lowestY = -12; // Default flower base
+            
+            petalLayers.forEach((layer, layerIndex) => {
+                layer.forEach((petal, petalIndex) => {
+                    // Get the petal's geometry bounds
+                    const geometry = petal.geometry;
+                    if (geometry.boundingBox === null) {
+                        geometry.computeBoundingBox();
+                    }
+                    
+                    // Get the world position of the petal
+                    const worldPosition = new THREE.Vector3();
+                    petal.getWorldPosition(worldPosition);
+                    
+                    // Calculate the actual lowest point considering the petal's geometry
+                    // Petals are spheres, so we need to account for their radius and rotation
+                    const petalRadius = 12 - (layerIndex * 2); // Same as in generateFlower
+                    const petalLowestY = worldPosition.y - petalRadius;
+                    
+                    // Check if this petal extends lower than our current lowest
+                    if (petalLowestY < lowestY) {
+                        lowestY = petalLowestY;
+                    }
+                });
+            });
+            
+            return lowestY;
         }
 
         function createStalk() {
-            // Remove existing stalk and connector if they exist
+            // Remove existing stalk if it exists
             if (stalkMesh) {
                 scene.remove(stalkMesh);
                 stalkMesh = null;
             }
-            // Remove any existing connectors
-            scene.children = scene.children.filter(child => !child.userData.isConnector);
             
             if (stalkLength > 0) {
                 // Create organic stalk using quadratic Bezier curve (like the reference code)
@@ -252,14 +844,14 @@
                 let offset = 0;
                 
                 // Stalk parameters
-                const y0 = -10; // Start higher to connect with flower
+                const y0 = -4.2; // Start at y = -5 as requested
                 const l0 = stalkLength * 0.3; // First segment
                 const l1 = stalkLength * 0.7; // Second segment
                 const theta = -0.3; // Bend angle (negative for downward curve)
-                const R0 = 1.2; // Top radius (wider to connect with flower)
+                const R0 = 1.2; // Top radius (matches connector)
                 const R = 1.5; // Bottom radius
-                const nt = 12; // Number of segments along length
-                const nfi = 8; // Number of segments around circumference
+                const nt = 20; // Number of segments along length (increased for smoothness)
+                const nfi = 16; // Number of segments around circumference (increased for smoothness)
                 
                 // Quadratic Bezier control points: (0,0) (0,l0) (l1*sin(th), l0 + l1*cos(th))
                 const lx = l1 * Math.sin(theta);
@@ -291,15 +883,24 @@
                     }
                 }
                 
-                // Generate indices for triangles
+                // Generate indices for triangles with proper winding
                 let t = offset;
                 let tn = offset + nfi;
                 for (let i = 0; i < nt - 1; i++) {
                     for (let j = 0; j < nfi - 1; j++) {
-                        ind.push(t++); ind.push(tn); ind.push(t);
-                        ind.push(tn++); ind.push(tn); ind.push(t);
+                        // First triangle
+                        ind.push(t);
+                        ind.push(tn);
+                        ind.push(t + 1);
+                        // Second triangle
+                        ind.push(tn);
+                        ind.push(tn + 1);
+                        ind.push(t + 1);
+                        t++;
+                        tn++;
                     }
-                    t++; tn++;
+                    t++;
+                    tn++;
                 }
                 offset += nt * nfi;
                 
@@ -313,22 +914,12 @@
                 const stalkMaterial = new THREE.MeshPhongMaterial({
                     vertexColors: THREE.VertexColors,
                     side: THREE.DoubleSide,
-                    shininess: 20
+                    shininess: 10,
+                    flatShading: false
                 });
                 
                 stalkMesh = new THREE.Mesh(stalkGeometry, stalkMaterial);
                 scene.add(stalkMesh);
-                
-                // Add a small connecting cylinder to bridge any gap
-                const connectorGeometry = new THREE.CylinderGeometry(1.2, 1.2, 2, 8);
-                const connectorMaterial = new THREE.MeshPhongMaterial({
-                    color: 0x2d5a27,
-                    shininess: 20
-                });
-                const connector = new THREE.Mesh(connectorGeometry, connectorMaterial);
-                connector.position.y = -11; // Position between flower and stalk
-                connector.userData.isConnector = true; // Mark for easy removal
-                scene.add(connector);
                 
                 console.log('Bezier stalk created with length:', stalkLength);
             }
@@ -340,6 +931,7 @@
             renderer.setPixelRatio(window.devicePixelRatio > 1 ? 2 : 1);
 
             renderer.physicallyCorrectLights = true;
+            renderer.shadowMap.enabled = true;
             renderer.shadowMap.autoUpdate = false;
 
             container.appendChild(renderer.domElement);
@@ -360,6 +952,54 @@
                     layer[i].rotateX((Math.PI / 2) * (petalRotation + layerRotations[layerIndex]));
                 }
             });
+            
+            // Update connector length based on petal positions
+            updateConnectorLength();
+            
+            // ========================================
+            // BEE ANIMATION SECTION
+            // ========================================
+            // Update bee animation
+            if (bee && bee.userData.wings) {
+                const t = Date.now() * 0.001; // Current time in seconds
+                
+                // ========================================
+                // FLIGHT MOVEMENT ANIMATION
+                // ========================================
+                // Gentle flight bob + rotation
+                // ADJUSTABLE PARAMETERS:
+                // - 1.2 = bob speed (higher = faster up/down movement)
+                // - 0.08 = bob amplitude (higher = bigger up/down movement)
+                // - 0.3 = rotation speed (higher = faster side-to-side movement)
+                // - 0.08 = rotation amplitude (higher = bigger side-to-side movement)
+                bee.position.y = beePosition.y + Math.sin(t * 1.2) * 0.08;
+                bee.rotation.y = Math.sin(t * 0.3) * 0.08;
+                
+                // ========================================
+                // WING FLAPPING ANIMATION
+                // ========================================
+                // Wing flap animation for all 4 wings
+                // ADJUSTABLE PARAMETERS:
+                // - wingSpeed = controlled by slider (5-30)
+                // - 0.9 = wing flap range (higher = bigger flap)
+                // - 0.5 = wing flap offset (center position)
+                const wingAngle = Math.sin(t * wingSpeed) * 0.9 + 0.5;
+                const wings = bee.userData.wings;
+                
+                // Front wings (index 0 and 1)
+                // ADJUSTABLE: Wing flap parameters
+                // - 0.6 = flap intensity (higher = bigger flap)
+                // - 0.4 = base rotation (resting position)
+                wings[0].rotation.z = -wingAngle * 0.6 + 0.4; // Left front
+                wings[1].rotation.z = wingAngle * 0.6 - 0.4;  // Right front
+                
+                // Back wings (index 2 and 3) - slightly offset timing
+                // ADJUSTABLE: Back wing timing offset
+                // - 0.2 = timing offset (higher = more delay between front/back wings)
+                const backWingAngle = Math.sin(t * wingSpeed + 0.2) * 0.9 + 0.5;
+                wings[2].rotation.z = -backWingAngle * 0.6 + 0.4; // Left back
+                wings[3].rotation.z = backWingAngle * 0.6 - 0.4;  // Right back
+            }
         }
 
         function onResize() {
@@ -435,6 +1075,51 @@
                 stalkLength = parseFloat(e.target.value);
                 stalkValueDisplay.textContent = stalkLength.toFixed(1);
                 createStalk();
+            });
+
+            // Bee controls
+            const beeScaleSlider = document.getElementById('bee-scale-slider');
+            const beeScaleValue = document.getElementById('bee-scale-value');
+            
+            beeScaleSlider.addEventListener('input', function(e) {
+                beeScale = parseFloat(e.target.value);
+                beeScaleValue.textContent = beeScale.toFixed(1);
+                updateBeeTransform();
+            });
+
+            const beeXSlider = document.getElementById('bee-x-slider');
+            const beeXValue = document.getElementById('bee-x-value');
+            
+            beeXSlider.addEventListener('input', function(e) {
+                beePosition.x = parseFloat(e.target.value);
+                beeXValue.textContent = beePosition.x.toFixed(1);
+                updateBeeTransform();
+            });
+
+            const beeYSlider = document.getElementById('bee-y-slider');
+            const beeYValue = document.getElementById('bee-y-value');
+            
+            beeYSlider.addEventListener('input', function(e) {
+                beePosition.y = parseFloat(e.target.value);
+                beeYValue.textContent = beePosition.y.toFixed(1);
+                updateBeeTransform();
+            });
+
+            const beeZSlider = document.getElementById('bee-z-slider');
+            const beeZValue = document.getElementById('bee-z-value');
+            
+            beeZSlider.addEventListener('input', function(e) {
+                beePosition.z = parseFloat(e.target.value);
+                beeZValue.textContent = beePosition.z.toFixed(1);
+                updateBeeTransform();
+            });
+
+            const wingSpeedSlider = document.getElementById('wing-speed-slider');
+            const wingSpeedValue = document.getElementById('wing-speed-value');
+            
+            wingSpeedSlider.addEventListener('input', function(e) {
+                wingSpeed = parseInt(e.target.value);
+                wingSpeedValue.textContent = wingSpeed;
             });
 
             // Initialize rotation info
