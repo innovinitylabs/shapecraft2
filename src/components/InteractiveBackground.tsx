@@ -57,101 +57,90 @@ export default function InteractiveBackground() {
       }
     `;
 
-    // Fragment shader for beautiful flower drawing
+    // Fragment shader - EXACT replica from the original CodePen
     const fragmentShader = `
-      uniform float u_stop_time;
-      uniform vec2 u_point;
+      #define PI 3.14159265359
+
+      uniform float u_ratio;
       uniform float u_moving;
+      uniform float u_stop_time;
       uniform float u_speed;
       uniform vec2 u_stop_randomizer;
       uniform float u_clean;
-      uniform float u_ratio;
+      uniform vec2 u_point;
       uniform sampler2D u_texture;
-      
       varying vec2 vUv;
-      
-      #define PI 3.14159265359
-      
-      float hash(vec2 p) {
-        return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+
+      float rand(vec2 n) {
+          return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453);
       }
-      
-      float noise(vec2 p) {
-        vec2 i = floor(p);
-        vec2 f = fract(p);
-        f = f * f * (3.0 - 2.0 * f);
-        return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x),
-                   mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
+      float noise(vec2 n) {
+          const vec2 d = vec2(0.0, 1.0);
+          vec2 b = floor(n), f = smoothstep(vec2(0.0), vec2(1.0), fract(n));
+          return mix(mix(rand(b), rand(b + d.yx), f.x), mix(rand(b + d.xy), rand(b + d.yy), f.x), f.y);
       }
-      
+
+      float flower_shape(vec2 _point, float _size, float _outline, float _tickniess, float _noise, float _angle_offset) {
+          float random_by_uv = noise(vUv);
+
+          float petals_thickness = .5;
+          float petals_number = 5. + floor(u_stop_randomizer[0] * 4.);
+          float angle_animated_offset = .7 * (random_by_uv - .5) / (.2 + 30. * u_stop_time);
+          float flower_angle = atan(_point.y, _point.x) - angle_animated_offset;
+          float flower_sectoral_shape = abs(sin(flower_angle * .5 * petals_number + _angle_offset)) + _tickniess * petals_thickness;
+
+          vec2 flower_size_range = vec2(4., 18.);
+          float flower_radial_shape = length(_point) * (flower_size_range[0] + flower_size_range[1] * u_stop_randomizer[0]);
+          float radius_noise = sin(flower_angle * 13. + 15. * random_by_uv);
+          flower_radial_shape += _noise * radius_noise;
+
+          float flower_radius_grow = min(20000. * u_stop_time, 1.);
+          flower_radius_grow = 1. / flower_radius_grow;
+
+          float flower_shape = 1. - smoothstep(0., _size * flower_sectoral_shape, _outline * flower_radius_grow * flower_radial_shape);
+          flower_shape *= (1. - u_moving);
+
+          flower_shape *= (1. - step(1., u_stop_time));
+
+          return flower_shape;
+      }
+
       void main() {
-        vec2 uv = vUv;
-        vec4 texColor = texture2D(u_texture, uv);
-        
-        vec2 point = u_point;
-        float dist = distance(uv, point);
-        
-        // Create beautiful flower with multiple layers
-        float angle = atan(uv.y - point.y, uv.x - point.x);
-        float radius = dist;
-        
-        // Multiple petal layers for depth
-        float petalCount1 = 8.0 + u_stop_randomizer.x * 4.0;
-        float petalCount2 = 16.0 + u_stop_randomizer.y * 8.0;
-        
-        // Inner petals
-        float innerPetal = sin(angle * petalCount1 + u_stop_randomizer.x * PI);
-        innerPetal = smoothstep(-0.3, 0.8, innerPetal);
-        
-        // Outer petals
-        float outerPetal = sin(angle * petalCount2 + u_stop_randomizer.y * PI);
-        outerPetal = smoothstep(-0.2, 0.6, outerPetal);
-        
-        // Petal shapes with smooth curves
-        float innerRadius = 0.08 + 0.02 * sin(u_stop_time * 2.0);
-        float outerRadius = 0.15 + 0.03 * sin(u_stop_time * 1.5);
-        
-        float innerFlower = smoothstep(innerRadius, 0.0, radius) * innerPetal;
-        float outerFlower = smoothstep(outerRadius, innerRadius * 0.7, radius) * outerPetal;
-        
-        // Center with detail
-        float centerRadius = 0.03;
-        float center = smoothstep(centerRadius, 0.0, radius);
-        center += 0.3 * sin(angle * 12.0 + u_stop_time * 3.0) * smoothstep(centerRadius * 1.5, 0.0, radius);
-        
-        // Stem effect
-        float stem = 0.0;
-        if (radius > outerRadius && radius < outerRadius * 2.0) {
-          float stemAngle = mod(angle + PI, PI * 2.0) - PI;
-          stem = smoothstep(0.1, 0.0, abs(stemAngle)) * smoothstep(outerRadius * 2.0, outerRadius, radius);
-        }
-        
-        // Animation and timing
-        float anim = u_moving * smoothstep(0.0, 0.2, u_stop_time);
-        float fade = smoothstep(3.0, 0.0, u_stop_time);
-        
-        // Colors with mood variations
-        vec3 innerColor = vec3(0.8, 0.3, 1.0); // Bright purple
-        vec3 outerColor = vec3(0.6, 0.2, 0.9); // Darker purple
-        vec3 centerColor = vec3(1.0, 0.8, 1.0); // Light pink
-        vec3 stemColor = vec3(0.3, 0.8, 0.4); // Green
-        
-        // Add some color variation based on randomizer
-        innerColor += 0.1 * vec3(u_stop_randomizer.x, u_stop_randomizer.y, 0.5);
-        outerColor += 0.1 * vec3(u_stop_randomizer.y, 0.3, u_stop_randomizer.x);
-        
-        // Combine all elements
-        vec3 color = texColor.rgb * u_clean;
-        color += innerFlower * innerColor * u_speed * anim * fade;
-        color += outerFlower * outerColor * u_speed * anim * fade * 0.7;
-        color += center * centerColor * u_speed * anim * fade;
-        color += stem * stemColor * u_speed * anim * fade * 0.5;
-        
-        // Add subtle glow
-        float glow = smoothstep(outerRadius * 1.5, 0.0, radius) * 0.3 * anim * fade;
-        color += glow * vec3(0.8, 0.4, 1.0);
-        
-        gl_FragColor = vec4(color, 1.0);
+
+          vec3 base = texture2D(u_texture, vUv).xyz;
+          vec2 cursor = vUv - u_point.xy;
+          cursor.x *= u_ratio;
+
+          // ========================================
+          // STEM
+
+          vec3 stem_color = vec3(0., 2., 2.);
+          float stem_radius = .005 * u_speed * u_moving;
+          float stem_shape = 1. - pow(smoothstep(0., stem_radius, dot(cursor, cursor)), .03);
+          vec3 stem = stem_shape * stem_color;
+
+          // ========================================
+          // FLOWER
+
+          // flower_shape:
+          // - center
+          // - size coefficient
+          // - bright outline width
+          // - extra sectoral weight
+          // - noise power
+          // - angle offset
+
+          vec3 flower_color = vec3(.7 + u_stop_randomizer[1], .8 * u_stop_randomizer[1], 2.9 + u_stop_randomizer[0] * .6);
+
+          vec3 flower_new = flower_color * flower_shape(cursor, 1., .96, 1., .15, 0.);
+          vec3 flower_mask = 1. - vec3(flower_shape(cursor, 1.05, 1.07, 1., .15, 0.));
+          vec3 flower_mid = vec3(-.6) * flower_shape(cursor, .15, 1., 2., .1, 1.9);
+
+          vec3 color = base * flower_mask + (flower_new + flower_mid + stem);
+          color *= u_clean;
+          color = clamp(color, vec3(.0, .0, .15), vec3(1., 1., .4));
+
+          gl_FragColor = vec4(color, 1.);
       }
     `;
 
@@ -253,24 +242,15 @@ export default function InteractiveBackground() {
     window.addEventListener("touchmove", handleTouchMove);
     window.addEventListener("resize", handleResize);
 
-    // Auto-draw beautiful flower patterns
+    // Auto-draw flowers like the original
     const autoDrawInterval = setInterval(() => {
-      if (Math.random() > 0.6) {
-        // Create flower clusters
-        const centerX = 0.3 + Math.random() * 0.4;
-        const centerY = 0.3 + Math.random() * 0.4;
-        
-        // Draw multiple flowers in a cluster
-        for (let i = 0; i < 3 + Math.floor(Math.random() * 3); i++) {
-          setTimeout(() => {
-            pointer.x = centerX + (Math.random() - 0.5) * 0.2;
-            pointer.y = centerY + (Math.random() - 0.5) * 0.2;
-            pointer.moved = true;
-            pointer.speed = 0.8 + Math.random() * 0.4;
-          }, i * 200);
-        }
+      if (Math.random() > 0.7) {
+        pointer.x = Math.random();
+        pointer.y = Math.random();
+        pointer.moved = true;
+        pointer.speed = 0.5 + Math.random() * 0.5;
       }
-    }, 1500);
+    }, 2000);
 
     return () => {
       // Cleanup
