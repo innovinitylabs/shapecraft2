@@ -2,244 +2,243 @@
 
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Flower, Wallet, Zap } from 'lucide-react';
-import Flower3D from '@/components/Flower3D';
-import MoodSlider from '@/components/MoodSlider';
+import { Flower, Zap, Users, Heart } from 'lucide-react';
+import FlowerArt, { generateFlowerTraits } from '@/components/FlowerArt';
+import AdvancedMoodSlider from '@/components/AdvancedMoodSlider';
 
 export default function MintPage() {
-  const [mood, setMood] = useState(5);
-  const [isConnected, setIsConnected] = useState(false);
+  const [selectedMood, setSelectedMood] = useState(5);
   const [isMinting, setIsMinting] = useState(false);
+  const [mintCount, setMintCount] = useState(1);
 
-  // Mock data for collection stats
-  const collectionStats = {
-    totalSupply: 1111,
-    minted: 342,
-    price: "0.01 ETH",
-    gasBackPercentage: 50
-  };
-
-  // Deterministic flower traits based on a fixed seed
+  // Generate deterministic flower traits based on mood
   const flowerTraits = useMemo(() => {
-    // Use a fixed seed for consistent traits across server/client
-    const seed = 42; // Fixed seed for demo
-    const random = (min: number, max: number) => {
-      return Math.floor((seed * 9301 + 49297) % 233280) / 233280 * (max - min + 1) + min;
-    };
-    
+    const baseTraits = generateFlowerTraits(42); // Fixed seed for demo
     return {
-      coreShape: Math.floor(random(0, 3)),
-      petalCount: Math.floor(random(5, 15)),
-      ringLayers: Math.floor(random(1, 5)),
-      glowIntensity: Math.floor(random(1, 10)),
-      rarityTier: Math.floor(random(1, 5))
+      ...baseTraits,
+      mood: selectedMood,
+      petalCount: Math.max(5, Math.min(13, 5 + Math.floor(selectedMood / 2))),
+      petalShape: selectedMood <= 3 ? 'drooping' as const : selectedMood >= 8 ? 'sharp' as const : 'rounded' as const,
+      glowIntensity: selectedMood / 10,
+      collectiveMood: 7, // Demo collective mood
+      tradingActivity: 0.5 // Demo trading activity
     };
-  }, []);
+  }, [selectedMood]);
 
   const handleMint = async () => {
-    if (!isConnected) {
-      alert('Please connect your wallet first');
-      return;
-    }
-    
     setIsMinting(true);
     // Simulate minting process
-    setTimeout(() => {
-      setIsMinting(false);
-      alert('NFT minted successfully! Check your wallet.');
-    }, 3000);
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    setIsMinting(false);
+    // TODO: Integrate with smart contract
+  };
+
+  const handleMoodChange = (newMood: number) => {
+    setSelectedMood(newMood);
   };
 
   return (
-    <div className="min-h-screen bg-black">
-      {/* Hero Section */}
-      <section className="relative py-20 px-4">
-        <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-black text-white">
+      {/* Header */}
+      <div className="bg-gradient-to-b from-purple-900/20 to-transparent border-b border-gray-800">
+        <div className="max-w-7xl mx-auto px-4 py-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-16"
+            className="text-center"
           >
-            <h1 className="text-5xl md:text-7xl font-bold mb-6">
-              <span className="gradient-text">Mint Your</span>
-              <br />
-              <span className="text-white">Living Flower</span>
+            <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-4">
+              Mint Your Flower
             </h1>
-            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-              Join the Shapes of Mind community and mint your unique NFT flower that will grow and evolve with your emotions.
+            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+              Create your unique living NFT flower. Each flower adapts to your mood and the collective consciousness of the community.
             </p>
           </motion.div>
+        </div>
+      </div>
 
-          {/* Collection Stats */}
+      <div className="max-w-7xl mx-auto px-4 py-12">
+        <div className="grid lg:grid-cols-2 gap-12 items-start">
+          {/* Flower Preview */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16"
+            initial={{ opacity: 0, x: -50 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="space-y-6"
           >
-            <div className="glass p-6 rounded-2xl text-center">
-              <div className="text-3xl font-bold gradient-text mb-2">{collectionStats.minted}</div>
-              <div className="text-gray-300">Minted</div>
+            <div className="text-center">
+              <h2 className="text-2xl font-semibold mb-4">Your Flower Preview</h2>
+              <div className="bg-gray-900/30 rounded-2xl p-8 border border-gray-700">
+                <FlowerArt
+                  traits={flowerTraits}
+                  size={400}
+                  interactive={true}
+                  onMoodChange={handleMoodChange}
+                />
+              </div>
             </div>
-            <div className="glass p-6 rounded-2xl text-center">
-              <div className="text-3xl font-bold gradient-text mb-2">{collectionStats.totalSupply}</div>
-              <div className="text-gray-300">Total Supply</div>
-            </div>
-            <div className="glass p-6 rounded-2xl text-center">
-              <div className="text-3xl font-bold gradient-text mb-2">{collectionStats.price}</div>
-              <div className="text-gray-300">Mint Price</div>
-            </div>
-            <div className="glass p-6 rounded-2xl text-center">
-              <div className="text-3xl font-bold gradient-text mb-2">{collectionStats.gasBackPercentage}%</div>
-              <div className="text-gray-300">Gas Back</div>
+
+            {/* Flower Traits Display */}
+            <div className="bg-gray-900/30 rounded-xl p-6 border border-gray-700">
+              <h3 className="text-lg font-semibold mb-4">Flower Traits</h3>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-400">Core Shape:</span>
+                  <span className="ml-2 text-white capitalize">{flowerTraits.coreShape}</span>
+                </div>
+                <div>
+                  <span className="text-gray-400">Petal Count:</span>
+                  <span className="ml-2 text-white">{flowerTraits.petalCount}</span>
+                </div>
+                <div>
+                  <span className="text-gray-400">Petal Shape:</span>
+                  <span className="ml-2 text-white capitalize">{flowerTraits.petalShape}</span>
+                </div>
+                <div>
+                  <span className="text-gray-400">Ring Count:</span>
+                  <span className="ml-2 text-white">{flowerTraits.ringCount}</span>
+                </div>
+                <div>
+                  <span className="text-gray-400">Glow Intensity:</span>
+                  <span className="ml-2 text-white">{Math.round(flowerTraits.glowIntensity * 100)}%</span>
+                </div>
+                <div>
+                  <span className="text-gray-400">Rarity Score:</span>
+                  <span className="ml-2 text-white">
+                    {Math.round((flowerTraits.ringCount + flowerTraits.petalThickness + flowerTraits.glowIntensity) * 20)}%
+                  </span>
+                </div>
+              </div>
             </div>
           </motion.div>
 
-          {/* Main Content */}
-          <div className="grid lg:grid-cols-2 gap-12 items-start">
-            {/* Left Column - Flower Preview */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-              className="glass p-8 rounded-2xl"
-            >
-              <h2 className="text-2xl font-bold mb-6 text-center">Your Flower Preview</h2>
-              <div className="h-96 mb-6">
-                <Flower3D 
-                  mood={mood} 
-                  traits={flowerTraits} 
-                  isInteractive={true}
-                  size={1.5}
-                />
-              </div>
+          {/* Minting Interface */}
+          <motion.div
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="space-y-8"
+          >
+            {/* Mood Selection */}
+            <div className="bg-gray-900/30 rounded-xl p-6 border border-gray-700">
+              <h3 className="text-xl font-semibold mb-4">Set Your Initial Mood</h3>
+              <p className="text-gray-400 mb-6">
+                Choose the mood that will define your flower&apos;s initial appearance. You can change this later!
+              </p>
+              <AdvancedMoodSlider
+                value={selectedMood}
+                onChange={handleMoodChange}
+                size="large"
+              />
+            </div>
+
+            {/* Minting Options */}
+            <div className="bg-gray-900/30 rounded-xl p-6 border border-gray-700">
+              <h3 className="text-xl font-semibold mb-4">Minting Options</h3>
               
-              {/* Mood Slider */}
+              {/* Quantity Selector */}
               <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-4 text-center">Set Your Initial Mood</h3>
-                <div className="flex justify-center">
-                  <MoodSlider 
-                    value={mood} 
-                    onChange={setMood} 
-                    disabled={!isConnected}
-                    size="md"
-                  />
-                </div>
-              </div>
-
-              {/* Traits Display */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center">
-                  <div className="text-sm text-gray-400">Flower Type</div>
-                  <div className="font-semibold">{['Sunflower', 'Rose', 'Daisy', 'Lotus'][flowerTraits.coreShape]}</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-sm text-gray-400">Petal Count</div>
-                  <div className="font-semibold">{flowerTraits.petalCount}</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-sm text-gray-400">Ring Layers</div>
-                  <div className="font-semibold">{flowerTraits.ringLayers}</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-sm text-gray-400">Rarity Tier</div>
-                  <div className="font-semibold">{flowerTraits.rarityTier}/5</div>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Right Column - Minting Interface */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8, delay: 0.6 }}
-              className="space-y-8"
-            >
-              {/* Wallet Connection */}
-              <div className="glass p-6 rounded-2xl">
-                <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                  <Wallet className="w-5 h-5" />
-                  Wallet Connection
-                </h3>
-                {!isConnected ? (
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Quantity
+                </label>
+                <div className="flex items-center gap-4">
                   <button
-                    onClick={() => setIsConnected(true)}
-                    className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-4 rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transition-all duration-300 flex items-center justify-center gap-2"
+                    onClick={() => setMintCount(Math.max(1, mintCount - 1))}
+                    className="w-10 h-10 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 flex items-center justify-center"
                   >
-                    <Wallet className="w-5 h-5" />
-                    Connect Wallet
+                    -
                   </button>
+                  <span className="text-2xl font-semibold min-w-[3rem] text-center">
+                    {mintCount}
+                  </span>
+                  <button
+                    onClick={() => setMintCount(Math.min(5, mintCount + 1))}
+                    className="w-10 h-10 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 flex items-center justify-center"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              {/* Price Display */}
+              <div className="mb-6 p-4 bg-gray-800/50 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-300">Price per NFT:</span>
+                  <span className="text-xl font-semibold">0.01 ETH</span>
+                </div>
+                <div className="flex justify-between items-center mt-2">
+                  <span className="text-gray-300">Total:</span>
+                  <span className="text-2xl font-bold text-purple-400">
+                    {(0.01 * mintCount).toFixed(2)} ETH
+                  </span>
+                </div>
+              </div>
+
+              {/* Mint Button */}
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleMint}
+                disabled={isMinting}
+                className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-xl font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              >
+                {isMinting ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Minting...
+                  </div>
                 ) : (
-                  <div className="text-center">
-                    <div className="text-green-400 font-semibold mb-2">✓ Wallet Connected</div>
-                    <div className="text-sm text-gray-400">0x1234...5678</div>
-                  </div>
+                  `Mint ${mintCount} Flower${mintCount > 1 ? 's' : ''}`
                 )}
-              </div>
+              </motion.button>
+            </div>
 
-              {/* Minting Section */}
-              <div className="glass p-6 rounded-2xl">
-                <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                  <Flower className="w-5 h-5" />
-                  Mint Your Flower
-                </h3>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span>Mint Price:</span>
-                    <span className="font-semibold">{collectionStats.price}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>Gas Back:</span>
-                    <span className="font-semibold text-green-400">{collectionStats.gasBackPercentage}%</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>Network:</span>
-                    <span className="font-semibold text-purple-400">Shape L2</span>
-                  </div>
-                  
-                  <button
-                    onClick={handleMint}
-                    disabled={!isConnected || isMinting}
-                    className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-4 rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isMinting ? (
-                      <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                        Minting...
-                      </>
-                    ) : (
-                      <>
-                        <Flower className="w-5 h-5" />
-                        Mint Flower
-                      </>
-                    )}
-                  </button>
+            {/* Features */}
+            <div className="bg-gray-900/30 rounded-xl p-6 border border-gray-700">
+              <h3 className="text-xl font-semibold mb-4">What You Get</h3>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <Flower className="w-5 h-5 text-purple-400" />
+                  <span className="text-gray-300">Unique 3D generative flower NFT</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Heart className="w-5 h-5 text-pink-400" />
+                  <span className="text-gray-300">Mood-driven visual evolution</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Users className="w-5 h-5 text-blue-400" />
+                  <span className="text-gray-300">Collective mood integration</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Zap className="w-5 h-5 text-yellow-400" />
+                  <span className="text-gray-300">Gas-back rewards for interactions</span>
                 </div>
               </div>
+            </div>
 
-              {/* Gas Back Info */}
-              <div className="glass p-6 rounded-2xl">
-                <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                  <Zap className="w-5 h-5" />
-                  Gas Back Rewards
-                </h3>
-                <p className="text-gray-300 mb-4">
-                  Get {collectionStats.gasBackPercentage}% of your gas fees back when you interact with your flower!
-                </p>
-                <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
-                  <div className="text-green-400 font-semibold">Available for:</div>
-                  <ul className="text-sm text-gray-300 mt-2 space-y-1">
-                    <li>• Mood updates</li>
-                    <li>• Flower renaming</li>
-                    <li>• Trading activities</li>
-                  </ul>
+            {/* Collection Info */}
+            <div className="bg-gradient-to-r from-purple-900/20 to-pink-900/20 rounded-xl p-6 border border-purple-700/30">
+              <h3 className="text-xl font-semibold mb-4">Collection Info</h3>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-400">Total Supply:</span>
+                  <span className="ml-2 text-white">1,111</span>
+                </div>
+                <div>
+                  <span className="text-gray-400">Minted:</span>
+                  <span className="ml-2 text-white">342/1,111</span>
+                </div>
+                <div>
+                  <span className="text-gray-400">Price:</span>
+                  <span className="ml-2 text-white">0.01 ETH</span>
+                </div>
+                <div>
+                  <span className="text-gray-400">Royalties:</span>
+                  <span className="ml-2 text-white">5%</span>
                 </div>
               </div>
-            </motion.div>
-          </div>
+            </div>
+          </motion.div>
         </div>
-      </section>
+      </div>
     </div>
   );
 }
