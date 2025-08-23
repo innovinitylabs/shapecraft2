@@ -87,6 +87,10 @@ export default function FlowerTypingEffect({ text, className = "" }: FlowerTypin
       renderer.setPixelRatio(window.devicePixelRatio);
       renderer.setSize(rect.width, rect.height);
       container.appendChild(renderer.domElement);
+      
+      // Make canvas fill the full width
+      renderer.domElement.style.width = '100%';
+      renderer.domElement.style.height = '100%';
 
       // Add OrbitControls like the test file
       const orbit = new OrbitControls(camera, renderer.domElement);
@@ -473,6 +477,10 @@ export default function FlowerTypingEffect({ text, className = "" }: FlowerTypin
         camera.aspect = rect.width / rect.height;
         camera.updateProjectionMatrix();
         renderer.setSize(rect.width, rect.height);
+        
+        // Ensure canvas maintains full width
+        renderer.domElement.style.width = '100%';
+        renderer.domElement.style.height = '100%';
       }
     };
 
@@ -494,7 +502,7 @@ export default function FlowerTypingEffect({ text, className = "" }: FlowerTypin
   }, [text]);
 
   return (
-    <div className={`relative ${className}`}>
+    <div className={`relative w-full ${className}`}>
       {/* Hidden text input for measuring */}
       <div
         ref={textInputRef}

@@ -10,14 +10,14 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-black">
       {/* Hero Section */}
-      <section className="relative h-screen flex items-center justify-center overflow-hidden">
+      <section className="relative h-screen">
         {/* Interactive Particle Background */}
         <div className="absolute inset-0">
           <InteractiveBackground />
         </div>
 
-        <div className="relative z-10 text-center px-4">
-          <div className="mb-6 h-96 md:h-[600px] w-full flex items-center justify-center">
+        <div className="relative z-10 text-center absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full">
+          <div className="mb-6 h-96 md:h-[600px] w-full">
             <FlowerTypingEffect
               text="Shapes of Mind"
               className="w-full h-full"
@@ -27,6 +27,7 @@ export default function Home() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
+            className="px-4"
           >
             <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto">
               Living NFT flowers that reflect your mood and the collective consciousness of our community. 
