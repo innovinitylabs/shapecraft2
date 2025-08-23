@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flower Art</title>
+    <style>
+        body {
+            width: 100vw;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: Arial;
+            background: rgb(203,213,241);
+            background: radial-gradient(circle, rgba(203,213,241,1) 0%, rgba(167,165,209,1) 100%);
+        }
+
+        #container-text {
+            position: absolute;
+            width: 100vw;
+            margin: 20px;
+            text-align: center;
+        }
+
+        #controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #333;
+            color: white;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #ccc;
+        }
+
+        input {
+            width: 200px;
+            padding: 8px;
+            border: 1px solid #333;
+            border-radius: 5px;
+            background: #111;
+            color: #fff;
+        }
+
+        #slider-value {
+            display: inline-block;
+            margin-left: 10px;
+            color: #fff;
+        }
+
+        #rotation-info {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #333;
+            color: white;
+            font-family: monospace;
+            font-size: 12px;
+            z-index: 100;
+        }
+
+        .rotation-value {
+            color: #4a90e2;
+            font-weight: bold;
+        }
+
+        #container-scene {
+            background: inherit;
+        }
+    </style>
+</head>
+<body>
+    <div id="container-text">
+        <p>
+            Shapes of Mind  
+        </p>
+    </div>
+
+    <div id="controls">
+        <div class="control-group">
+            <label>Petal Rotation:</label>
+            <input type="range" id="petal-slider" min="0" max="1" value="0" step="0.01">
+            <span id="slider-value">0</span>
+        </div>
+        <div class="control-group">
+            <label>Petal Count:</label>
+            <input type="range" id="count-slider" min="3" max="12" value="6" step="1">
+            <span id="count-value">6</span>
+        </div>
+        <div class="control-group">
+            <label>Layer Count:</label>
+            <input type="range" id="layer-slider" min="1" max="5" value="2" step="1">
+            <span id="layer-value">2</span>
+        </div>
+        <div class="control-group">
+            <label>Selected Layer:</label>
+            <select id="layer-selector">
+                <option value="0">Layer 1</option>
+                <option value="1">Layer 2</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <label>Layer Rotation:</label>
+            <input type="range" id="layer-rotation-slider" min="0" max="1" value="0" step="0.01">
+            <span id="layer-rotation-value">0.00</span>
+        </div>
+        <div class="control-group">
+            <label>Layer Offset:</label>
+            <input type="range" id="layer-offset-slider" min="0" max="1" value="0" step="0.01">
+            <span id="layer-offset-value">0.00</span>
+        </div>
+    </div>
+
+    <div id="container-scene">
+    </div>
+
+    <div id="rotation-info">
+        <div>Petal Rotation: <span class="rotation-value" id="rotation-degrees">0°</span></div>
+        <div>Rotation Radians: <span class="rotation-value" id="rotation-radians">0.00</span></div>
+        <div>Slider Value: <span class="rotation-value" id="slider-display">0.00</span></div>
+        <div>Petal Count: <span class="rotation-value" id="count-display">6</span></div>
+        <div>Layer Count: <span class="rotation-value" id="layer-display">2</span></div>
+        <div>Selected Layer: <span class="rotation-value" id="selected-layer-display">1</span></div>
+        <div>Layer Rotation: <span class="rotation-value" id="layer-rotation-display">0.00</span></div>
+        <div>Layer Offset: <span class="rotation-value" id="layer-offset-display">0.00</span></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/110/three.min.js"></script>
+    <script src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/264161/OrbitControls.js"></script>
+
+    <script>
+        let container, scene, camera, renderer;
+
+        let petalRotation = 0;
+
+        let petalMeshes,
+            petalCount = 6,
+            rotationStep = Math.PI * 2 / petalCount;
+        let petalLayers = [];
+        let layerCount = 2;
+        let layerRotations = [0, 0]; // Individual rotation for each layer
+        let layerOffsets = [0, 0]; // Angular offset for each layer
+
+        function init() {
+            container = document.querySelector("#container-scene");
+            scene = new THREE.Scene();
+
+            //camera
+            camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 70, 140);
+
+            // lights
+            const dirLight = new THREE.DirectionalLight(0xff00ff, 2);
+            dirLight.position.set(20, 0, 55);
+            const hemLight = new THREE.HemisphereLight(0xffffbb, 0x080820, 3);
+            scene.add(dirLight, hemLight);
+
+            // controls
+            controls = new THREE.OrbitControls(camera, container);
+            controls.target.set(0, 15, 0);
+            controls.update();
+
+            generateFlower();
+
+            initRenderer();
+
+            requestAnimationFrame(render);
+
+            setupSlider();
+            window.addEventListener("resize", onResize);
+        }
+
+        init();
+
+        function generateFlower() {
+            // Clear existing petal layers
+            petalLayers.forEach(layer => {
+                layer.forEach(mesh => {
+                    scene.remove(mesh);
+                });
+            });
+            petalLayers = [];
+            
+            // Initialize layer rotations and offsets arrays
+            layerRotations = new Array(layerCount).fill(0);
+            layerOffsets = new Array(layerCount).fill(0);
+            
+            // Set default offsets for natural staggering
+            for (let i = 0; i < layerCount; i++) {
+                layerOffsets[i] = (1 / layerCount) * i; // Distribute evenly
+            }
+            
+            // Generate layers
+            for (let layer = 0; layer < layerCount; layer++) {
+                let layerRadius = 12 - (layer * 2); // Decrease radius for each layer
+                let layerColor = 0xeaeaea - (layer * 0x1a1a1a); // Darken color for each layer
+                
+                let petalMat = new THREE.MeshPhongMaterial({color: layerColor, side: THREE.DoubleSide});
+                let petalGeom = new THREE.SphereBufferGeometry(layerRadius, 20, 20, Math.PI / 3, Math.PI / 3, 0, Math.PI);
+                petalGeom.translate(0, -layerRadius, 0);
+                petalGeom.rotateX(Math.PI / 2);
+                let petalMesh = new THREE.Mesh(petalGeom, petalMat);
+
+                let layerMeshes = [];
+                for (let i = 0; i < petalCount; i++) {
+                    layerMeshes[i] = petalMesh.clone();
+                    scene.add(layerMeshes[i]);
+                }
+                petalLayers.push(layerMeshes);
+            }
+            
+            updateLayerSelector();
+        }
+
+        function initRenderer() {
+            renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio > 1 ? 2 : 1);
+
+            renderer.physicallyCorrectLights = true;
+            renderer.shadowMap.autoUpdate = false;
+
+            container.appendChild(renderer.domElement);
+        }
+
+        function render() {
+            requestAnimationFrame(render);
+            renderer.render(scene, camera);
+            update();
+        }
+
+        function update() {
+            // Update all petal layers with individual rotations and offsets
+            petalLayers.forEach((layer, layerIndex) => {
+                for (var i = 0; i < petalCount; i++) {
+                    layer[i].rotation.set(0, 0, 0);
+                    layer[i].rotateY((rotationStep * i) + (layerOffsets[layerIndex] * Math.PI * 2));
+                    layer[i].rotateX((Math.PI / 2) * (petalRotation + layerRotations[layerIndex]));
+                }
+            });
+        }
+
+        function onResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function setupSlider() {
+            const petalSlider = document.getElementById('petal-slider');
+            const petalValueDisplay = document.getElementById('slider-value');
+            
+            petalSlider.addEventListener('input', function(e) {
+                petalRotation = parseFloat(e.target.value);
+                petalValueDisplay.textContent = petalRotation.toFixed(2);
+                updateRotationInfo();
+            });
+
+            const countSlider = document.getElementById('count-slider');
+            const countValueDisplay = document.getElementById('count-value');
+            
+            countSlider.addEventListener('input', function(e) {
+                petalCount = parseInt(e.target.value);
+                rotationStep = Math.PI * 2 / petalCount;
+                countValueDisplay.textContent = petalCount;
+                generateFlower();
+                updateRotationInfo();
+            });
+
+            const layerSlider = document.getElementById('layer-slider');
+            const layerValueDisplay = document.getElementById('layer-value');
+            
+            layerSlider.addEventListener('input', function(e) {
+                layerCount = parseInt(e.target.value);
+                layerValueDisplay.textContent = layerCount;
+                generateFlower();
+                updateRotationInfo();
+            });
+
+            const layerSelector = document.getElementById('layer-selector');
+            const layerRotationSlider = document.getElementById('layer-rotation-slider');
+            const layerRotationValue = document.getElementById('layer-rotation-value');
+            
+            layerSelector.addEventListener('change', function(e) {
+                const selectedLayer = parseInt(e.target.value);
+                layerRotationSlider.value = layerRotations[selectedLayer];
+                layerRotationValue.textContent = layerRotations[selectedLayer].toFixed(2);
+                layerOffsetSlider.value = layerOffsets[selectedLayer];
+                layerOffsetValue.textContent = layerOffsets[selectedLayer].toFixed(2);
+            });
+            
+            layerRotationSlider.addEventListener('input', function(e) {
+                const selectedLayer = parseInt(layerSelector.value);
+                layerRotations[selectedLayer] = parseFloat(e.target.value);
+                layerRotationValue.textContent = layerRotations[selectedLayer].toFixed(2);
+                updateRotationInfo();
+            });
+
+            const layerOffsetSlider = document.getElementById('layer-offset-slider');
+            const layerOffsetValue = document.getElementById('layer-offset-value');
+            
+            layerOffsetSlider.addEventListener('input', function(e) {
+                const selectedLayer = parseInt(layerSelector.value);
+                layerOffsets[selectedLayer] = parseFloat(e.target.value);
+                layerOffsetValue.textContent = layerOffsets[selectedLayer].toFixed(2);
+                updateRotationInfo();
+            });
+
+            // Initialize rotation info
+            updateRotationInfo();
+        }
+
+        function updateLayerSelector() {
+            const layerSelector = document.getElementById('layer-selector');
+            layerSelector.innerHTML = '';
+            
+            for (let i = 0; i < layerCount; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = `Layer ${i + 1}`;
+                layerSelector.appendChild(option);
+            }
+        }
+
+        function updateRotationInfo() {
+            const rotationDegrees = (petalRotation * 90).toFixed(1);
+            const rotationRadians = (petalRotation * Math.PI / 2).toFixed(3);
+            
+            document.getElementById('rotation-degrees').textContent = rotationDegrees + '°';
+            document.getElementById('rotation-radians').textContent = rotationRadians;
+            document.getElementById('slider-display').textContent = petalRotation.toFixed(2);
+            document.getElementById('count-display').textContent = petalCount;
+            document.getElementById('layer-display').textContent = layerCount;
+            
+            const selectedLayer = parseInt(document.getElementById('layer-selector').value);
+            document.getElementById('selected-layer-display').textContent = selectedLayer + 1;
+            document.getElementById('layer-rotation-display').textContent = layerRotations[selectedLayer].toFixed(2);
+            document.getElementById('layer-offset-display').textContent = layerOffsets[selectedLayer].toFixed(2);
+        }
+    </script>
+</body>
+</html>
