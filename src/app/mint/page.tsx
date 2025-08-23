@@ -157,12 +157,12 @@ export default function MintPage() {
             </div>
 
             {/* Flower Canvas - Full Screen */}
-            <div className="relative h-[800px] bg-black rounded-xl overflow-hidden">
+            <div className="relative h-[800px] bg-black rounded-xl overflow-hidden flex items-center justify-center">
               {moodParams ? (
                 <FlowerArt
                   moodParams={moodParams}
                   size={800}
-                  className="w-full h-full"
+                  className=""
                 />
               ) : (
                 <div className="flex items-center justify-center h-full">
