@@ -3,17 +3,17 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Flower, Heart, Zap, Users } from 'lucide-react';
+import InteractiveBackground from '@/components/InteractiveBackground';
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-black">
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
-        {/* Animated background */}
+        {/* Interactive Particle Background */}
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-blue-900/20 to-pink-900/20" />
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-float" />
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
+          <InteractiveBackground />
         </div>
 
         <div className="relative z-10 text-center px-4">
@@ -224,6 +224,28 @@ export default function Home() {
           </motion.div>
         </div>
       </section>
+
+      {/* Footer with Attribution */}
+      <footer className="relative bg-black/50 border-t border-gray-800 py-8">
+        <div className="max-w-7xl mx-auto px-4 text-center">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="text-gray-400 text-sm">
+              © 2024 Shapes of Mind. Built for Shape L2 Hackathon.
+            </div>
+            <div className="text-gray-500 text-xs">
+              Interactive background inspired by{' '}
+              <a 
+                href="https://codepen.io/sol187/pen/zYJgyQB" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-purple-400 hover:text-purple-300 transition-colors"
+              >
+                @sol187
+              </a>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
