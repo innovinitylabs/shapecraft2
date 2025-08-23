@@ -230,18 +230,22 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 text-center">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="text-gray-400 text-sm">
-              © 2024 Shapes of Mind. Built for Shape L2 Hackathon.
+              © 2025 Shapes of Mind. Built for Shape L2 Hackathon.
             </div>
-            <div className="text-gray-500 text-xs">
-              Interactive background inspired by{' '}
-              <a 
-                href="https://codepen.io/sol187/pen/zYJgyQB" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-purple-400 hover:text-purple-300 transition-colors"
-              >
-                @sol187
-              </a>
+            <div className="text-gray-500 text-xs relative group">
+              <span className="text-purple-400 hover:text-purple-300 transition-colors cursor-pointer">
+                Credits
+              </span>
+              {/* Credits Tooltip */}
+              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-xs text-gray-300 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+                <div className="mb-1 font-semibold text-purple-400">Credits:</div>
+                <div>Interactive background: <a href="https://codepen.io/sol187/pen/zYJgyQB" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300">@sol187</a></div>
+                <div>Icons: <a href="https://lucide.dev" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300">Lucide</a></div>
+                <div>Framework: <a href="https://nextjs.org" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300">Next.js</a></div>
+                <div>Animations: <a href="https://framer.com/motion" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300">Framer Motion</a></div>
+                {/* Arrow pointing down */}
+                <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+              </div>
             </div>
           </div>
         </div>
