@@ -20,8 +20,8 @@ export default function FlowerTypingEffect({ text, className = "" }: FlowerTypin
 
     // Settings
     const fontName = 'Arial, sans-serif';
-    const textureFontSize = 120;
-    const fontScaleFactor = 0.12;
+    const textureFontSize = 80;
+    const fontScaleFactor = 0.08;
 
     // Set up hidden text input
     const textInputEl = textInputRef.current;
@@ -65,12 +65,17 @@ export default function FlowerTypingEffect({ text, className = "" }: FlowerTypin
       caretPosScene: [] as number[]
     };
 
+    // Typing animation variables
+    let currentTextLength = 0;
+    const typingSpeed = 100; // milliseconds per character
+    let lastTypingTime = 0;
+
     // Initialize 3D scene
     function init() {
-      const container = containerRef.current!;
-      const rect = container.getBoundingClientRect();
-      camera = new THREE.PerspectiveCamera(45, rect.width / rect.height, 0.1, 1000);
-      camera.position.z = 25;
+      const containerEl = containerRef.current!;
+      const containerRect = containerEl.getBoundingClientRect();
+      camera = new THREE.PerspectiveCamera(45, containerRect.width / containerRect.height, 0.1, 1000);
+      camera.position.z = 20;
 
       scene = new THREE.Scene();
       sceneRef.current = scene;
@@ -82,9 +87,7 @@ export default function FlowerTypingEffect({ text, className = "" }: FlowerTypin
       rendererRef.current = renderer;
       renderer.setPixelRatio(window.devicePixelRatio);
       
-      // Get container dimensions
-      const containerEl = containerRef.current!;
-      const containerRect = containerEl.getBoundingClientRect();
+      // Use the container dimensions from init
       renderer.setSize(containerRect.width, containerRect.height);
       renderer.setClearColor(0x000000, 0);
       containerEl.appendChild(renderer.domElement);
@@ -209,16 +212,38 @@ export default function FlowerTypingEffect({ text, className = "" }: FlowerTypin
 
     // Sample coordinates from text
     function sampleCoordinates() {
-      const lines = text.split('\n');
+      const currentTime = Date.now();
+      
+      // Update typing animation
+      if (currentTime - lastTypingTime > typingSpeed && currentTextLength < text.length) {
+        currentTextLength++;
+        lastTypingTime = currentTime;
+      }
+      
+      const currentText = text.substring(0, currentTextLength);
+      const lines = currentText.split('\n');
       const linesNumber = lines.length;
-      textCanvas.width = stringBox.wTexture;
-      textCanvas.height = stringBox.hTexture;
+      
+      // Ensure canvas is large enough for the text
+      const tempCanvas = document.createElement('canvas');
+      const tempCtx = tempCanvas.getContext('2d')!;
+      tempCtx.font = '100 ' + textureFontSize + 'px ' + fontName;
+      
+      let maxWidth = 0;
+      for (let i = 0; i < linesNumber; i++) {
+        const metrics = tempCtx.measureText(lines[i]);
+        maxWidth = Math.max(maxWidth, metrics.width);
+      }
+      
+      textCanvas.width = Math.max(maxWidth + 50, stringBox.wTexture);
+      textCanvas.height = Math.max(textureFontSize * 1.5, stringBox.hTexture);
+      
       textCtx.font = '100 ' + textureFontSize + 'px ' + fontName;
       textCtx.fillStyle = '#2a9d8f';
       textCtx.clearRect(0, 0, textCanvas.width, textCanvas.height);
       
       for (let i = 0; i < linesNumber; i++) {
-        textCtx.fillText(lines[i], 0, (i + 0.8) * stringBox.hTexture / linesNumber);
+        textCtx.fillText(lines[i], 0, (i + 0.8) * textureFontSize);
       }
 
       if (stringBox.wTexture > 0) {
