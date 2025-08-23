@@ -156,30 +156,23 @@ export default function MintPage() {
               </AnimatePresence>
             </div>
 
-            {/* Flower Preview - Full Width Below */}
-            <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
-              <h3 className="text-2xl font-semibold text-white mb-6 flex items-center justify-center">
-                <Flower className="mr-3" size={28} />
-                Your Living Flower
-              </h3>
-              
-              <div className="relative h-[600px] bg-black/20 rounded-xl overflow-hidden flex items-center justify-center">
-                {moodParams ? (
-                  <FlowerArt
-                    moodParams={moodParams}
-                    size={500}
-                    className="w-full h-full"
-                  />
-                ) : (
-                  <div className="flex items-center justify-center h-full">
-                    <div className="text-center text-white/50">
-                      <Flower size={64} className="mx-auto mb-6 opacity-50" />
-                      <p className="text-lg mb-2">Your flower will appear here</p>
-                      <p className="text-sm">Describe your mood to generate a unique flower</p>
-                    </div>
+            {/* Flower Canvas - Full Screen */}
+            <div className="relative h-[800px] bg-black rounded-xl overflow-hidden">
+              {moodParams ? (
+                <FlowerArt
+                  moodParams={moodParams}
+                  size={800}
+                  className="w-full h-full"
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center text-white/50">
+                    <Flower size={64} className="mx-auto mb-6 opacity-50" />
+                    <p className="text-lg mb-2">Your flower will appear here</p>
+                    <p className="text-sm">Describe your mood to generate a unique flower</p>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

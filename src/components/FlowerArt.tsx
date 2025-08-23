@@ -757,6 +757,13 @@ export default function FlowerArt({
     // Controls
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.target.set(0, 0, 0);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.enableZoom = true;
+    controls.enablePan = true;
+    controls.enableRotate = true;
+    controls.minDistance = 50;
+    controls.maxDistance = 300;
     controls.update();
 
     // Initialize flower
@@ -795,7 +802,7 @@ export default function FlowerArt({
   return (
     <div 
       ref={containerRef} 
-      className={`relative flex items-center justify-center ${className}`}
+      className={`${className}`}
       style={{ width: size, height: size }}
     />
   );
