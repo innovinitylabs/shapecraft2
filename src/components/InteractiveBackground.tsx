@@ -18,11 +18,12 @@ export default function InteractiveBackground() {
     // Three.js setup
     const renderer = new THREE.WebGLRenderer({
       canvas: canvas,
-      alpha: true,
+      alpha: false,
       antialias: true
     });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0x000000, 1); // Black background to match site theme
 
     const sceneShader = new THREE.Scene();
     const sceneBasic = new THREE.Scene();
