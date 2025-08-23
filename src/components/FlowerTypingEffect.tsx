@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 interface FlowerTypingEffectProps {
   text: string;
@@ -18,15 +19,14 @@ export default function FlowerTypingEffect({ text, className = "" }: FlowerTypin
 
     // Settings
     const fontName = 'Verdana';
-    const textureFontSize = 70;
-    const fontScaleFactor = 0.075;
+    const textureFontSize = 70; // Same as test file
+    const fontScaleFactor = 0.075; // Same as test file
 
-    // Set up hidden text input
+    // Set up text input
     const textInputEl = textInputRef.current;
     textInputEl.style.fontSize = textureFontSize + 'px';
     textInputEl.style.font = '100 ' + textureFontSize + 'px ' + fontName;
     textInputEl.style.lineHeight = 1.1 * textureFontSize + 'px';
-    textInputEl.innerHTML = ''; // Start empty for typing animation
 
     // 3D scene related globals
     let scene: THREE.Scene;
@@ -43,6 +43,9 @@ export default function FlowerTypingEffect({ text, className = "" }: FlowerTypin
     let flowerMaterial: THREE.MeshBasicMaterial;
     let leafMaterial: THREE.MeshBasicMaterial;
 
+    // String to show
+    let string = text;
+
     // Coordinates data per 2D canvas and 3D scene
     let textureCoordinates: Array<{
       x: number;
@@ -50,6 +53,8 @@ export default function FlowerTypingEffect({ text, className = "" }: FlowerTypin
       old: boolean;
       toDelete: boolean;
     }> = [];
+
+
 
     // 1d-array of data objects to store and change params of each instance
     let particles: Array<Flower | Leaf> = [];
@@ -63,18 +68,16 @@ export default function FlowerTypingEffect({ text, className = "" }: FlowerTypin
       caretPosScene: [] as number[]
     };
 
-    // Typing animation variables
-    let currentTextLength = 0;
-    const typingSpeed = 150; // milliseconds per character
-    let lastTypingTime = 0;
+    // Set initial text and focus
+    textInputEl.innerHTML = string;
+    textInputEl.focus();
 
-    // Initialize 3D scene
     function init() {
       const container = containerRef.current!;
       const rect = container.getBoundingClientRect();
       
       camera = new THREE.PerspectiveCamera(45, rect.width / rect.height, 0.1, 1000);
-      camera.position.z = 18;
+      camera.position.z = 18; // Same as test file
 
       scene = new THREE.Scene();
 
@@ -85,13 +88,17 @@ export default function FlowerTypingEffect({ text, className = "" }: FlowerTypin
       renderer.setSize(rect.width, rect.height);
       container.appendChild(renderer.domElement);
 
+      // Add OrbitControls like the test file
+      const orbit = new OrbitControls(camera, renderer.domElement);
+      orbit.enablePan = false;
+
       textCanvas = document.createElement('canvas');
       textCanvas.width = textCanvas.height = 0;
       textCtx = textCanvas.getContext('2d')!;
       particleGeometry = new THREE.PlaneGeometry(1.2, 1.2);
 
-      // Create flower texture
-      const flowerTexture = new THREE.CanvasTexture(createFlowerTexture());
+      // Use external textures like the original
+      const flowerTexture = new THREE.TextureLoader().load('https://ksenia-k.com/img/threejs/flower.png');
       flowerMaterial = new THREE.MeshBasicMaterial({
         alphaMap: flowerTexture,
         opacity: 0.3,
@@ -99,8 +106,7 @@ export default function FlowerTypingEffect({ text, className = "" }: FlowerTypin
         transparent: true,
       });
 
-      // Create leaf texture
-      const leafTexture = new THREE.CanvasTexture(createLeafTexture());
+      const leafTexture = new THREE.TextureLoader().load('https://ksenia-k.com/img/threejs/leaf.png');
       leafMaterial = new THREE.MeshBasicMaterial({
         alphaMap: leafTexture,
         opacity: 0.35,
@@ -121,126 +127,90 @@ export default function FlowerTypingEffect({ text, className = "" }: FlowerTypin
       scene.add(cursorMesh);
     }
 
-    // Create flower texture
-    function createFlowerTexture() {
-      const canvas = document.createElement('canvas');
-      canvas.width = 64;
-      canvas.height = 64;
-      const ctx = canvas.getContext('2d')!;
-      
-      ctx.clearRect(0, 0, 64, 64);
-      
-      // Draw flower with petals
-      const centerX = 32;
-      const centerY = 32;
-      const petalCount = 6;
-      const petalLength = 18;
-      const petalWidth = 6;
-      
-      // Draw petals
-      for (let i = 0; i < petalCount; i++) {
-        const angle = (i / petalCount) * Math.PI * 2;
-        const petalX = centerX + Math.cos(angle) * 6;
-        const petalY = centerY + Math.sin(angle) * 6;
-        
-        ctx.save();
-        ctx.translate(petalX, petalY);
-        ctx.rotate(angle);
-        
-        ctx.beginPath();
-        ctx.ellipse(0, 0, petalWidth, petalLength, 0, 0, Math.PI * 2);
-        ctx.fillStyle = 'white';
-        ctx.fill();
-        
-        ctx.restore();
-      }
-      
-      // Draw center
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, 4, 0, Math.PI * 2);
-      ctx.fillStyle = 'white';
-      ctx.fill();
-      
-      return canvas;
+    function setCaretToEndOfInput() {
+      document.execCommand('selectAll', false, undefined);
+      document.getSelection()?.collapseToEnd();
     }
 
-    // Create leaf texture
-    function createLeafTexture() {
-      const canvas = document.createElement('canvas');
-      canvas.width = 64;
-      canvas.height = 64;
-      const ctx = canvas.getContext('2d')!;
-      
-      ctx.clearRect(0, 0, 64, 64);
-      
-      // Draw leaf shape
-      const centerX = 32;
-      const centerY = 32;
-      
-      ctx.beginPath();
-      ctx.moveTo(centerX, centerY - 15);
-      ctx.quadraticCurveTo(centerX + 12, centerY - 8, centerX + 10, centerY);
-      ctx.quadraticCurveTo(centerX + 12, centerY + 8, centerX, centerY + 15);
-      ctx.quadraticCurveTo(centerX - 12, centerY + 8, centerX - 10, centerY);
-      ctx.quadraticCurveTo(centerX - 12, centerY - 8, centerX, centerY - 15);
-      ctx.closePath();
-      
-      ctx.fillStyle = 'white';
-      ctx.fill();
-      
-      return canvas;
-    }
-
-    // Handle input and update string
     function handleInput() {
-      // Temporarily make text input visible to get proper dimensions
-      textInputEl.style.opacity = '1';
-      textInputEl.style.position = 'absolute';
-      textInputEl.style.top = '0';
-      textInputEl.style.left = '0';
-      textInputEl.style.zIndex = '-1';
-      
-      // Set the full text to measure dimensions
-      textInputEl.innerHTML = text;
-      
+      if (isNewLine(textInputEl.firstChild)) {
+        textInputEl.firstChild?.remove();
+      }
+      if (isNewLine(textInputEl.lastChild)) {
+        if (isNewLine(textInputEl.lastChild?.previousSibling || null)) {
+          textInputEl.lastChild?.remove();
+        }
+      }
+
+      string = textInputEl.innerHTML
+        .replaceAll("<p>", "\n")
+        .replaceAll("</p>", "")
+        .replaceAll("<div>", "\n")
+        .replaceAll("</div>", "")
+        .replaceAll("<br>", "")
+        .replaceAll("<br/>", "")
+        .replaceAll("&nbsp;", " ");
+
       stringBox.wTexture = textInputEl.clientWidth;
       stringBox.wScene = stringBox.wTexture * fontScaleFactor;
       stringBox.hTexture = textInputEl.clientHeight;
       stringBox.hScene = stringBox.hTexture * fontScaleFactor;
-      stringBox.caretPosScene = [0, 0]; // Simplified for now
-      
-      // Reset for animation
-      textInputEl.innerHTML = '';
-      textInputEl.style.opacity = '0';
-    }
+      stringBox.caretPosScene = getCaretCoordinates().map(c => c * fontScaleFactor);
 
-    // Sample coordinates from text
-    function sampleCoordinates() {
-      const currentTime = Date.now();
-      
-      // Update typing animation
-      if (currentTime - lastTypingTime > typingSpeed && currentTextLength < text.length) {
-        currentTextLength++;
-        lastTypingTime = currentTime;
-        textInputEl.innerHTML = text.substring(0, currentTextLength);
+      function isNewLine(el: ChildNode | null) {
+        if (el && 'tagName' in el && typeof el.tagName === 'string' && 'innerHTML' in el) {
+          if (el.tagName.toUpperCase() === 'DIV' || el.tagName.toUpperCase() === 'P') {
+            if (el.innerHTML === '<br>' || el.innerHTML === '</br>') {
+              return true;
+            }
+          }
+        }
+        return false;
       }
 
-      const lines = textInputEl.innerHTML.split('\n');
+      function getCaretCoordinates() {
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0) return [0, 0];
+        
+        const range = selection.getRangeAt(0);
+        const needsToWorkAroundNewlineBug =
+          range.startContainer.nodeName.toLowerCase() === "div" &&
+          range.startOffset === 0;
+        if (needsToWorkAroundNewlineBug) {
+                  return [
+          (range.startContainer as HTMLElement).offsetLeft,
+          (range.startContainer as HTMLElement).offsetTop
+        ];
+        } else {
+          const rects = range.getClientRects();
+          if (rects[0]) {
+            return [rects[0].left, rects[0].top];
+                     } else {
+             document.execCommand("selectAll", false, undefined);
+             return [0, 0];
+           }
+        }
+      }
+    }
+
+    function sampleCoordinates() {
+      // Draw text
+      const lines = string.split('\n');
       const linesNumber = lines.length;
       textCanvas.width = stringBox.wTexture;
       textCanvas.height = stringBox.hTexture;
       textCtx.font = '100 ' + textureFontSize + 'px ' + fontName;
       textCtx.fillStyle = '#2a9d8f';
       textCtx.clearRect(0, 0, textCanvas.width, textCanvas.height);
-      
       for (let i = 0; i < linesNumber; i++) {
         textCtx.fillText(lines[i], 0, (i + 0.8) * stringBox.hTexture / linesNumber);
       }
 
+      // Sample coordinates
       if (stringBox.wTexture > 0) {
+        // Image data to 2d array
         const imageData = textCtx.getImageData(0, 0, textCanvas.width, textCanvas.height);
         const imageMask = Array.from(Array(textCanvas.height), () => new Array(textCanvas.width));
-        
         for (let i = 0; i < textCanvas.height; i++) {
           for (let j = 0; j < textCanvas.width; j++) {
             imageMask[i][j] = imageData.data[(j + i * textCanvas.width) * 4] > 0;
@@ -248,9 +218,12 @@ export default function FlowerTypingEffect({ text, className = "" }: FlowerTypin
         }
 
         if (textureCoordinates.length !== 0) {
+          // Clean up: delete coordinates and particles which disappeared on the prev step
+          // We need to keep same indexes for coordinates and particles to reuse old particles properly
           textureCoordinates = textureCoordinates.filter(c => !c.toDelete);
           particles = particles.filter(c => !c.toDelete);
 
+          // Go through existing coordinates (old to keep, toDelete for fade-out animation)
           textureCoordinates.forEach(c => {
             if (imageMask[c.y]) {
               if (imageMask[c.y][c.x]) {
@@ -267,6 +240,7 @@ export default function FlowerTypingEffect({ text, className = "" }: FlowerTypin
           });
         }
 
+        // Add new coordinates
         for (let i = 0; i < textCanvas.height; i++) {
           for (let j = 0; j < textCanvas.width; j++) {
             if (imageMask[i][j]) {
@@ -284,7 +258,6 @@ export default function FlowerTypingEffect({ text, className = "" }: FlowerTypin
       }
     }
 
-    // Flower particle class
     class Flower {
       type: number;
       x: number;
@@ -338,7 +311,6 @@ export default function FlowerTypingEffect({ text, className = "" }: FlowerTypin
       }
     }
 
-    // Leaf particle class
     class Leaf {
       type: number;
       x: number;
@@ -386,7 +358,6 @@ export default function FlowerTypingEffect({ text, className = "" }: FlowerTypin
       }
     }
 
-    // Refresh text and recreate particles
     function refreshText() {
       sampleCoordinates();
 
@@ -406,7 +377,6 @@ export default function FlowerTypingEffect({ text, className = "" }: FlowerTypin
       updateCursorPosition();
     }
 
-    // Recreate instanced meshes
     function recreateInstancedMesh() {
       if (flowerInstancedMesh) scene.remove(flowerInstancedMesh);
       if (leafInstancedMesh) scene.remove(leafInstancedMesh);
@@ -434,7 +404,6 @@ export default function FlowerTypingEffect({ text, className = "" }: FlowerTypin
       leafInstancedMesh.position.y = flowerInstancedMesh.position.y = -0.5 * stringBox.hScene;
     }
 
-    // Update particle matrices
     function updateParticlesMatrices() {
       let flowerIdx = 0;
       let leafIdx = 0;
@@ -460,7 +429,6 @@ export default function FlowerTypingEffect({ text, className = "" }: FlowerTypin
       leafInstancedMesh.instanceMatrix.needsUpdate = true;
     }
 
-    // Make text fit screen
     function makeTextFitScreen() {
       const fov = camera.fov * (Math.PI / 180);
       const fovH = 2 * Math.atan(Math.tan(fov / 2) * camera.aspect);
@@ -474,18 +442,15 @@ export default function FlowerTypingEffect({ text, className = "" }: FlowerTypin
       }
     }
 
-    // Update cursor position
     function updateCursorPosition() {
       cursorMesh.position.x = -0.5 * stringBox.wScene + stringBox.caretPosScene[0];
       cursorMesh.position.y = 0.5 * stringBox.hScene - stringBox.caretPosScene[1];
     }
 
-    // Update cursor opacity
     function updateCursorOpacity() {
-      (cursorMesh.material as THREE.MeshBasicMaterial).opacity = 0; // Always hidden since no user input
+      (cursorMesh.material as THREE.MeshBasicMaterial).opacity = 0; // Always hidden for our use case
     }
 
-    // Render loop
     function render() {
       updateParticlesMatrices();
       updateCursorOpacity();
@@ -493,8 +458,9 @@ export default function FlowerTypingEffect({ text, className = "" }: FlowerTypin
       animationIdRef.current = requestAnimationFrame(render);
     }
 
-    // Initialize everything
+    // Initialize everything exactly like the original
     init();
+    setCaretToEndOfInput();
     handleInput();
     refreshText();
     render();

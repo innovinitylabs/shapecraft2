@@ -17,7 +17,7 @@ export default function Home() {
         </div>
 
         <div className="relative z-10 text-center px-4">
-          <div className="mb-6 h-48 md:h-64 flex items-center justify-center">
+          <div className="mb-6 h-96 md:h-[600px] w-full flex items-center justify-center">
             <FlowerTypingEffect
               text="Shapes of Mind"
               className="w-full h-full"
