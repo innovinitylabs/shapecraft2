@@ -638,6 +638,8 @@ export default function FlowerArt({
   const generateFlower = () => {
     const state = flowerStateRef.current;
     
+    console.log('Generating flower with state:', state);
+    
     // Clear existing petal layers
     petalLayersRef.current.forEach(layer => {
       layer.forEach(mesh => {
@@ -672,6 +674,8 @@ export default function FlowerArt({
         sceneRef.current?.add(layerMeshes[i]);
       }
       petalLayersRef.current.push(layerMeshes);
+      
+      console.log(`Created layer ${layer} with ${state.petalCount} petals`);
     }
     
     createConnector();
@@ -682,6 +686,11 @@ export default function FlowerArt({
   // Update function
   const update = () => {
     const state = flowerStateRef.current;
+    
+    // Debug: Log update calls (only every 60 frames to avoid spam)
+    if (Math.random() < 0.016) { // ~1/60 chance
+      console.log('Update called, petalLayers:', petalLayersRef.current.length);
+    }
     
     // Update mood-based rotation (with fallback)
     updateAdvancedMoodRotation();
@@ -831,6 +840,9 @@ export default function FlowerArt({
       update();
       renderer.render(scene, camera);
     };
+    
+    // Debug: Log animation start
+    console.log('Starting animation loop');
     animate();
 
     // Cleanup
