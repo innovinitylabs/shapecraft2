@@ -22,7 +22,7 @@ class MoodClassifierService {
 
   constructor() {
     // Use Railway backend URL - update this with your actual Railway URL
-    this.baseUrl = process.env.NEXT_PUBLIC_MOOD_CLASSIFIER_API_URL || 'https://shapes-of-mood-classifier-production.up.railway.app';
+    this.baseUrl = process.env.NEXT_PUBLIC_MOOD_CLASSIFIER_API_URL || 'https://shapes-of-mood.up.railway.app';
   }
 
   async analyzeMood(request: MoodAnalysisRequest): Promise<FlowerArtParameters> {
