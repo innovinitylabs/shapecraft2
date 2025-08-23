@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Flower, Wallet, Zap, Users, Coins } from 'lucide-react';
 import Flower3D from '@/components/Flower3D';
@@ -19,14 +19,22 @@ export default function MintPage() {
     gasBackPercentage: 50
   };
 
-  // Mock flower traits
-  const flowerTraits = {
-    coreShape: Math.floor(Math.random() * 4),
-    petalCount: Math.floor(Math.random() * 11) + 5, // 5-15
-    ringLayers: Math.floor(Math.random() * 5) + 1, // 1-5
-    glowIntensity: Math.floor(Math.random() * 10) + 1, // 1-10
-    rarityTier: Math.floor(Math.random() * 5) + 1 // 1-5
-  };
+  // Deterministic flower traits based on a fixed seed
+  const flowerTraits = useMemo(() => {
+    // Use a fixed seed for consistent traits across server/client
+    const seed = 42; // Fixed seed for demo
+    const random = (min: number, max: number) => {
+      return Math.floor((seed * 9301 + 49297) % 233280) / 233280 * (max - min + 1) + min;
+    };
+    
+    return {
+      coreShape: Math.floor(random(0, 3)),
+      petalCount: Math.floor(random(5, 15)),
+      ringLayers: Math.floor(random(1, 5)),
+      glowIntensity: Math.floor(random(1, 10)),
+      rarityTier: Math.floor(random(1, 5))
+    };
+  }, []);
 
   const handleMint = async () => {
     if (!isConnected) {
@@ -123,8 +131,8 @@ export default function MintPage() {
               {/* Traits Display */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center">
-                  <div className="text-sm text-gray-400">Core Shape</div>
-                  <div className="font-semibold">{['Circle', 'Hexagon', 'Star', 'Spiral'][flowerTraits.coreShape]}</div>
+                  <div className="text-sm text-gray-400">Flower Type</div>
+                  <div className="font-semibold">{['Sunflower', 'Rose', 'Daisy', 'Lotus'][flowerTraits.coreShape]}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-sm text-gray-400">Petal Count</div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Flower, Heart, Edit3, Clock, Users, Zap } from 'lucide-react';
 import Flower3D from '@/components/Flower3D';
@@ -28,8 +28,8 @@ export default function GalleryPage() {
   const [newName, setNewName] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // Mock NFT data
-  const mockNFTs: NFT[] = [
+  // Mock NFT data with deterministic traits
+  const mockNFTs: NFT[] = useMemo(() => [
     {
       id: 1,
       name: "Serenity Bloom",
@@ -78,7 +78,7 @@ export default function GalleryPage() {
       ],
       lastUpdated: Date.now() - 86400000 * 1
     }
-  ];
+  ], []);
 
   const handleMoodUpdate = async (nftId: number, newMood: number) => {
     setIsUpdating(true);
@@ -239,8 +239,8 @@ export default function GalleryPage() {
                   {/* Traits */}
                   <div className="grid grid-cols-2 gap-4 mb-6">
                     <div className="text-center">
-                      <div className="text-sm text-gray-400">Core Shape</div>
-                      <div className="font-semibold">{['Circle', 'Hexagon', 'Star', 'Spiral'][selectedNFT.traits.coreShape]}</div>
+                      <div className="text-sm text-gray-400">Flower Type</div>
+                      <div className="font-semibold">{['Sunflower', 'Rose', 'Daisy', 'Lotus'][selectedNFT.traits.coreShape]}</div>
                     </div>
                     <div className="text-center">
                       <div className="text-sm text-gray-400">Petal Count</div>

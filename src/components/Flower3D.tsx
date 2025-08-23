@@ -13,96 +13,244 @@ interface Flower3DProps {
   size?: number;
 }
 
-// Get mood color
-const getMoodColor = (mood: number): string => {
-  if (mood <= 2) return '#4A90E2'; // Blue - Sad
-  if (mood <= 4) return '#7ED321'; // Green - Calm
-  if (mood <= 6) return '#F5A623'; // Orange - Neutral
-  if (mood <= 8) return '#FF6B6B'; // Red - Excited
-  return '#FFD700'; // Gold - Joy
+// Get mood color palette
+const getMoodColors = (mood: number) => {
+  if (mood <= 2) return { primary: '#4A90E2', secondary: '#2E5BBA', accent: '#1E3A8A' }; // Blue - Sad
+  if (mood <= 4) return { primary: '#7ED321', secondary: '#5CB85C', accent: '#4CAF50' }; // Green - Calm
+  if (mood <= 6) return { primary: '#F5A623', secondary: '#FF8C00', accent: '#FF6B35' }; // Orange - Neutral
+  if (mood <= 8) return { primary: '#FF6B6B', secondary: '#E74C3C', accent: '#C0392B' }; // Red - Excited
+  return { primary: '#FFD700', secondary: '#FFA500', accent: '#FF8C00' }; // Gold - Joy
 };
 
-// Get shape name
-const getShapeName = (shapeType: number): string => {
+// Get flower type based on core shape
+const getFlowerType = (shapeType: number): string => {
   switch (shapeType) {
-    case 0: return 'Circle';
-    case 1: return 'Hexagon';
-    case 2: return 'Star';
-    case 3: return 'Spiral';
-    default: return 'Circle';
+    case 0: return 'Sunflower';
+    case 1: return 'Rose';
+    case 2: return 'Daisy';
+    case 3: return 'Lotus';
+    default: return 'Sunflower';
   }
 };
 
 export default function Flower3D({ mood, traits, isInteractive = true, size = 1 }: Flower3DProps) {
-  const moodColor = getMoodColor(mood);
-  const shapeName = getShapeName(traits.coreShape);
+  const colors = getMoodColors(mood);
+  const flowerType = getFlowerType(traits.coreShape);
+  const petalSize = 20 + (mood * 2) + (traits.rarityTier * 3);
+  const stemHeight = 80 + (mood * 3);
   
   return (
     <div className="w-full h-full flex items-center justify-center">
-      <div className="relative">
-        {/* Glow effect */}
-        <div 
-          className="absolute inset-0 rounded-full blur-xl opacity-50 animate-pulse"
-          style={{ 
-            backgroundColor: moodColor,
-            animationDuration: `${2 + mood * 0.2}s`
-          }}
-        />
-        
-        {/* Main flower */}
-        <div className="relative z-10">
-          {/* Petals */}
-          <div className="relative w-32 h-32">
-            {Array.from({ length: traits.petalCount }).map((_, i) => {
-              const angle = (i / traits.petalCount) * 360;
-              const radius = 60 + (mood * 2) + (traits.rarityTier * 3);
-              const x = Math.cos((angle * Math.PI) / 180) * radius;
-              const y = Math.sin((angle * Math.PI) / 180) * radius;
-              
-              return (
-                <div
-                  key={i}
-                  className="absolute w-4 h-4 rounded-full animate-bounce"
-                  style={{
-                    backgroundColor: moodColor,
-                    left: `calc(50% + ${x}px)`,
-                    top: `calc(50% + ${y}px)`,
-                    transform: 'translate(-50%, -50%)',
-                    animationDelay: `${i * 0.1}s`,
-                    animationDuration: `${1 + mood * 0.1}s`
-                  }}
-                />
-              );
-            })}
-          </div>
-          
-          {/* Core shape */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div
-              className="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-xs"
-              style={{ 
-                backgroundColor: moodColor,
-                boxShadow: `0 0 20px ${moodColor}40`
-              }}
-            >
-              {shapeName}
-            </div>
-          </div>
-        </div>
-        
-        {/* Ring layers */}
-        {Array.from({ length: traits.ringLayers }).map((_, i) => (
-          <div
-            key={i}
-            className="absolute inset-0 border-2 rounded-full animate-spin"
-            style={{
-              borderColor: moodColor,
-              opacity: 0.3 - (i * 0.1),
-              animationDuration: `${10 + i * 2}s`,
-              animationDirection: i % 2 === 0 ? 'normal' : 'reverse'
+      <div className="relative" style={{ transform: `scale(${size})` }}>
+        {/* Stem */}
+        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
+          <div 
+            className="w-3 rounded-full"
+            style={{ 
+              height: `${stemHeight}px`,
+              background: `linear-gradient(to top, #2D5016, #4A7C59)`,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
             }}
           />
-        ))}
+          {/* Stem leaves */}
+          <div className="absolute left-1/2 transform -translate-x-1/2" style={{ top: '60%' }}>
+            <div 
+              className="w-8 h-4 rounded-full transform rotate-45"
+              style={{ 
+                background: `linear-gradient(45deg, #4A7C59, #6B8E23)`,
+                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+              }}
+            />
+          </div>
+          <div className="absolute left-1/2 transform -translate-x-1/2" style={{ top: '40%' }}>
+            <div 
+              className="w-6 h-3 rounded-full transform -rotate-45"
+              style={{ 
+                background: `linear-gradient(-45deg, #4A7C59, #6B8E23)`,
+                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Flower Center */}
+        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2" style={{ bottom: `${stemHeight}px` }}>
+          {/* Main flower structure */}
+          <div className="relative">
+            
+            {/* Petals Layer 1 - Outer petals */}
+            <div className="relative">
+              {Array.from({ length: traits.petalCount }).map((_, i) => {
+                const angle = (i / traits.petalCount) * 360;
+                const radius = petalSize + 10;
+                const x = Math.cos((angle * Math.PI) / 180) * radius;
+                const y = Math.sin((angle * Math.PI) / 180) * radius;
+                
+                return (
+                  <div
+                    key={`outer-${i}`}
+                    className="absolute animate-float"
+                    style={{
+                      left: `calc(50% + ${x}px)`,
+                      top: `calc(50% + ${y}px)`,
+                      transform: 'translate(-50%, -50%)',
+                      animationDelay: `${i * 0.1}s`,
+                      animationDuration: `${3 + mood * 0.2}s`
+                    }}
+                  >
+                    {/* Petal shape */}
+                    <div 
+                      className="w-8 h-12 rounded-full transform rotate-12"
+                      style={{
+                        background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`,
+                        boxShadow: `0 4px 12px ${colors.primary}40`,
+                        filter: 'blur(0.5px)'
+                      }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Petals Layer 2 - Middle petals */}
+            <div className="relative">
+              {Array.from({ length: Math.floor(traits.petalCount * 0.7) }).map((_, i) => {
+                const angle = (i / Math.floor(traits.petalCount * 0.7)) * 360 + 15;
+                const radius = petalSize - 5;
+                const x = Math.cos((angle * Math.PI) / 180) * radius;
+                const y = Math.sin((angle * Math.PI) / 180) * radius;
+                
+                return (
+                  <div
+                    key={`middle-${i}`}
+                    className="absolute animate-float"
+                    style={{
+                      left: `calc(50% + ${x}px)`,
+                      top: `calc(50% + ${y}px)`,
+                      transform: 'translate(-50%, -50%)',
+                      animationDelay: `${i * 0.15}s`,
+                      animationDuration: `${2.5 + mood * 0.2}s`
+                    }}
+                  >
+                    <div 
+                      className="w-6 h-10 rounded-full transform rotate-6"
+                      style={{
+                        background: `linear-gradient(135deg, ${colors.secondary}, ${colors.accent})`,
+                        boxShadow: `0 3px 8px ${colors.secondary}40`
+                      }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Petals Layer 3 - Inner petals */}
+            <div className="relative">
+              {Array.from({ length: Math.floor(traits.petalCount * 0.4) }).map((_, i) => {
+                const angle = (i / Math.floor(traits.petalCount * 0.4)) * 360 + 30;
+                const radius = petalSize - 15;
+                const x = Math.cos((angle * Math.PI) / 180) * radius;
+                const y = Math.sin((angle * Math.PI) / 180) * radius;
+                
+                return (
+                  <div
+                    key={`inner-${i}`}
+                    className="absolute animate-float"
+                    style={{
+                      left: `calc(50% + ${x}px)`,
+                      top: `calc(50% + ${y}px)`,
+                      transform: 'translate(-50%, -50%)',
+                      animationDelay: `${i * 0.2}s`,
+                      animationDuration: `${2 + mood * 0.2}s`
+                    }}
+                  >
+                    <div 
+                      className="w-4 h-8 rounded-full transform rotate-3"
+                      style={{
+                        background: `linear-gradient(135deg, ${colors.accent}, ${colors.primary})`,
+                        boxShadow: `0 2px 6px ${colors.accent}40`
+                      }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Flower Center */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="relative">
+                {/* Center glow */}
+                <div 
+                  className="absolute inset-0 rounded-full blur-lg animate-pulse"
+                  style={{ 
+                    backgroundColor: colors.primary,
+                    animationDuration: `${2 + mood * 0.3}s`
+                  }}
+                />
+                
+                {/* Main center */}
+                <div
+                  className="relative w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-xs border-2"
+                  style={{ 
+                    background: `radial-gradient(circle, ${colors.primary}, ${colors.secondary})`,
+                    borderColor: colors.accent,
+                    boxShadow: `0 0 20px ${colors.primary}60, inset 0 2px 4px rgba(255,255,255,0.3)`
+                  }}
+                >
+                  {flowerType}
+                </div>
+                
+                {/* Center details */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  {Array.from({ length: 8 }).map((_, i) => {
+                    const angle = (i / 8) * 360;
+                    const radius = 6;
+                    const x = Math.cos((angle * Math.PI) / 180) * radius;
+                    const y = Math.sin((angle * Math.PI) / 180) * radius;
+                    
+                    return (
+                      <div
+                        key={i}
+                        className="absolute w-1 h-1 rounded-full"
+                        style={{
+                          backgroundColor: colors.accent,
+                          left: `calc(50% + ${x}px)`,
+                          top: `calc(50% + ${y}px)`,
+                          transform: 'translate(-50%, -50%)'
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Ring layers around flower */}
+            {Array.from({ length: traits.ringLayers }).map((_, i) => (
+              <div
+                key={`ring-${i}`}
+                className="absolute inset-0 border rounded-full animate-spin"
+                style={{
+                  borderColor: colors.primary,
+                  opacity: 0.2 - (i * 0.05),
+                  animationDuration: `${15 + i * 3}s`,
+                  animationDirection: i % 2 === 0 ? 'normal' : 'reverse',
+                  transform: `scale(${1.2 + i * 0.3})`
+                }}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Ambient glow around entire flower */}
+        <div 
+          className="absolute inset-0 rounded-full blur-2xl opacity-30 animate-pulse"
+          style={{ 
+            backgroundColor: colors.primary,
+            animationDuration: `${4 + mood * 0.5}s`,
+            transform: 'scale(1.5)'
+          }}
+        />
       </div>
     </div>
   );
