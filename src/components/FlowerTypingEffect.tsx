@@ -67,7 +67,9 @@ export default function FlowerTypingEffect({ text, className = "" }: FlowerTypin
 
     // Initialize 3D scene
     function init() {
-      camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+      const container = containerRef.current!;
+      const rect = container.getBoundingClientRect();
+      camera = new THREE.PerspectiveCamera(45, rect.width / rect.height, 0.1, 1000);
       camera.position.z = 25;
 
       scene = new THREE.Scene();
@@ -79,9 +81,13 @@ export default function FlowerTypingEffect({ text, className = "" }: FlowerTypin
       });
       rendererRef.current = renderer;
       renderer.setPixelRatio(window.devicePixelRatio);
-      renderer.setSize(window.innerWidth, window.innerHeight);
+      
+      // Get container dimensions
+      const containerEl = containerRef.current!;
+      const containerRect = containerEl.getBoundingClientRect();
+      renderer.setSize(containerRect.width, containerRect.height);
       renderer.setClearColor(0x000000, 0);
-      containerRef.current!.appendChild(renderer.domElement);
+      containerEl.appendChild(renderer.domElement);
 
       textCanvas = document.createElement('canvas');
       textCanvas.width = textCanvas.height = 0;
@@ -480,9 +486,13 @@ export default function FlowerTypingEffect({ text, className = "" }: FlowerTypin
 
     // Handle resize
     const handleResize = () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
+      const containerEl = containerRef.current;
+      if (containerEl) {
+        const containerRect = containerEl.getBoundingClientRect();
+        camera.aspect = containerRect.width / containerRect.height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(containerRect.width, containerRect.height);
+      }
     };
 
     window.addEventListener('resize', handleResize);
