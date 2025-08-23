@@ -73,7 +73,7 @@ export default function MoodInput({ onMoodAnalyzed, onLoadingChange, className =
   const getExampleMood = async () => {
     try {
       const example = await moodClassifierService.getExample();
-      setText(example.example_request.text);
+      setText(String(example.example_request.text));
     } catch (error) {
       console.error('Failed to get example:', error);
     }

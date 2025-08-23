@@ -494,8 +494,9 @@ export default function FlowerTypingEffect({ text, className = "" }: FlowerTypin
       }
       if (renderer) {
         renderer.dispose();
-        if (containerRef.current) {
-          containerRef.current.innerHTML = '';
+        const container = containerRef.current;
+        if (container) {
+          container.innerHTML = '';
         }
       }
     };
