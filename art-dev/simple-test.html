@@ -124,36 +124,52 @@
             <input type="range" id="layer-offset-slider" min="0" max="1" value="0" step="0.01">
             <span id="layer-offset-value">0.00</span>
         </div>
-        <div class="control-group">
-            <label>Stalk Length:</label>
-            <input type="range" id="stalk-slider" min="0" max="20" value="5" step="0.5">
-            <span id="stalk-value">5.0</span>
-        </div>
-        <div class="control-group">
-            <label>Bee Scale:</label>
-            <input type="range" id="bee-scale-slider" min="0.1" max="2" value="0.5" step="0.1">
-            <span id="bee-scale-value">0.5</span>
-        </div>
-        <div class="control-group">
-            <label>Bee Position X:</label>
-            <input type="range" id="bee-x-slider" min="-10" max="10" value="0" step="0.5">
-            <span id="bee-x-value">0.0</span>
-        </div>
-        <div class="control-group">
-            <label>Bee Position Y:</label>
-            <input type="range" id="bee-y-slider" min="-5" max="10" value="2" step="0.5">
-            <span id="bee-y-value">2.0</span>
-        </div>
-        <div class="control-group">
-            <label>Bee Position Z:</label>
-            <input type="range" id="bee-z-slider" min="-10" max="10" value="0" step="0.5">
-            <span id="bee-z-value">0.0</span>
-        </div>
-        <div class="control-group">
-            <label>Wing Flap Speed:</label>
-            <input type="range" id="wing-speed-slider" min="5" max="30" value="18" step="1">
-            <span id="wing-speed-value">18</span>
-        </div>
+                        <div class="control-group">
+                    <label>Stalk Length:</label>
+                    <input type="range" id="stalk-slider" min="8.8" max="33" value="10" step="0.5">
+                    <span id="stalk-value">10.0</span>
+                </div>
+        
+                        <div class="control-group">
+                    <label>Bee Position X:</label>
+                    <input type="range" id="bee-x-slider" min="-20" max="20" value="0" step="0.5">
+                    <span id="bee-x-value">0.0</span>
+                </div>
+                <div class="control-group">
+                    <label>Bee Position Y:</label>
+                    <input type="range" id="bee-y-slider" min="1.85" max="20" value="2.1" step="0.1">
+                    <span id="bee-y-value">2.1</span>
+                </div>
+        
+                        <div class="control-group">
+                    <label>Bee Position Z:</label>
+                    <input type="range" id="bee-z-slider" min="-20" max="20" value="0" step="0.5">
+                    <span id="bee-z-value">0.0</span>
+                </div>
+                        <div class="control-group">
+                    <label>Wing Flap Speed:</label>
+                    <input type="range" id="wing-speed-slider" min="5" max="30" value="18" step="1">
+                    <span id="wing-speed-value">18</span>
+                </div>
+                <div class="control-group">
+                    <label>Bee Y Rotation:</label>
+                    <input type="range" id="bee-rotation-slider" min="0" max="360" value="0" step="5">
+                    <span id="bee-rotation-value">0°</span>
+                </div>
+                <div class="control-group">
+                    <label>Flower Emotion:</label>
+                    <select id="emotion-selector">
+                        <option value="neutral">Neutral (Silver)</option>
+                        <option value="happy">Happy (Golden Yellow)</option>
+                        <option value="joy">Joy (Hot Pink)</option>
+                        <option value="sad">Sad (Royal Blue)</option>
+                        <option value="fear">Fear (Purple)</option>
+                        <option value="anger">Anger (Orange Red)</option>
+                        <option value="disgust">Disgust (Forest Green)</option>
+                        <option value="shame">Shame (Light Pink)</option>
+                        <option value="surprise">Surprise (Deep Pink)</option>
+                    </select>
+                </div>
     </div>
 
     <div id="container-scene">
@@ -185,7 +201,7 @@
         let layerCount = 2;
         let layerRotations = [0, 0]; // Individual rotation for each layer
         let layerOffsets = [0, 0]; // Angular offset for each layer
-        let stalkLength = 5;
+                        let stalkLength = 10;
         let stalkMesh = null;
         let connectorMesh = null;
         
@@ -193,9 +209,27 @@
         let bee = null;
         let leftWing = null;
         let rightWing = null;
-        let beeScale = 0.5;
-        let beePosition = { x: 0, y: 2, z: 0 };
-        let wingSpeed = 18;
+                        let beeScale = 1.11; // Fixed bee scale
+                let beePosition = { x: 0, y: 2.1, z: 0 }; // Fixed Y position
+                let beeRotation = 0; // Bee Y rotation in degrees
+                let wingSpeed = 18;
+        
+        // ========================================
+        // EMOTION-BASED FLOWER COLORS
+        // ========================================
+        const emotion_colors = {
+            "happy": "#FFD700",    // Golden yellow
+            "joy": "#FF69B4",      // Hot pink
+            "sad": "#4169E1",      // Royal blue
+            "fear": "#800080",     // Purple
+            "anger": "#FF4500",    // Orange red
+            "disgust": "#228B22",  // Forest green
+            "shame": "#FFB6C1",    // Light pink
+            "surprise": "#FF1493", // Deep pink
+            "neutral": "#C0C0C0"   // Silver
+        };
+        
+        let currentEmotion = "neutral"; // Default emotion
 
         function init() {
             container = document.querySelector("#container-scene");
@@ -250,7 +284,7 @@
             // Generate layers
             for (let layer = 0; layer < layerCount; layer++) {
                 let layerRadius = 12 - (layer * 2); // Decrease radius for each layer
-                let layerColor = 0xeaeaea - (layer * 0x1a1a1a); // Darken color for each layer
+                let layerColor = getEmotionColor(currentEmotion, layer); // Use emotion-based colors
                 
                 let petalMat = new THREE.MeshPhongMaterial({color: layerColor, side: THREE.DoubleSide});
                 let petalGeom = new THREE.SphereBufferGeometry(layerRadius, 20, 20, Math.PI / 3, Math.PI / 3, 0, Math.PI);
@@ -270,6 +304,41 @@
             createConnector();
             createStalk();
             createBee();
+        }
+        
+        // ========================================
+        // EMOTION-BASED COLOR FUNCTIONS
+        // ========================================
+        
+        function getEmotionColor(emotion, layer) {
+            // Get the base emotion color
+            const baseColor = emotion_colors[emotion] || emotion_colors["neutral"];
+            
+            // Convert hex to RGB
+            const hex = baseColor.replace('#', '');
+            const r = parseInt(hex.substr(0, 2), 16);
+            const g = parseInt(hex.substr(2, 2), 16);
+            const b = parseInt(hex.substr(4, 2), 16);
+            
+            // Darken each layer progressively
+            const darkenFactor = 1 - (layer * 0.1); // Each layer gets 10% darker
+            const darkenedR = Math.floor(r * darkenFactor);
+            const darkenedG = Math.floor(g * darkenFactor);
+            const darkenedB = Math.floor(b * darkenFactor);
+            
+            // Convert back to hex
+            const darkenedHex = (darkenedR << 16) | (darkenedG << 8) | darkenedB;
+            return darkenedHex;
+        }
+        
+        function updateFlowerColors() {
+            // Update colors for all existing petal layers
+            petalLayers.forEach((layer, layerIndex) => {
+                const newColor = getEmotionColor(currentEmotion, layerIndex);
+                layer.forEach(petal => {
+                    petal.material.color.setHex(newColor);
+                });
+            });
         }
         
         // ========================================
@@ -741,18 +810,21 @@
         // ========================================
         // BEE TRANSFORM FUNCTION
         // ========================================
-        // Updates bee position and scale based on slider controls
+        // Updates bee position and rotation based on slider controls
         function updateBeeTransform() {
             if (bee) {
                 // ADJUSTABLE: Bee position (controlled by X, Y, Z sliders)
                 // - beePosition.x = left/right position
-                // - beePosition.y = up/down position  
+                // - beePosition.y = up/down position (min 1.85)
                 // - beePosition.z = forward/backward position
                 bee.position.set(beePosition.x, beePosition.y, beePosition.z);
                 
-                // ADJUSTABLE: Bee scale (controlled by scale slider)
-                // - beeScale = overall size (0.1 = tiny, 2.0 = huge)
+                // FIXED: Bee scale (set to 1.11)
                 bee.scale.setScalar(beeScale);
+                
+                // ADJUSTABLE: Bee rotation (controlled by rotation slider)
+                // - beeRotation = Y rotation in degrees (0-360)
+                bee.rotation.y = (beeRotation * Math.PI) / 180; // Convert degrees to radians
             }
         }
 
@@ -973,7 +1045,11 @@
                 // - 0.3 = rotation speed (higher = faster side-to-side movement)
                 // - 0.08 = rotation amplitude (higher = bigger side-to-side movement)
                 bee.position.y = beePosition.y + Math.sin(t * 1.2) * 0.08;
-                bee.rotation.y = Math.sin(t * 0.3) * 0.08;
+                
+                // Combine manual rotation with gentle animation
+                const manualRotation = (beeRotation * Math.PI) / 180; // Convert degrees to radians
+                const animationRotation = Math.sin(t * 0.3) * 0.08; // Gentle side-to-side movement
+                bee.rotation.y = manualRotation + animationRotation;
                 
                 // ========================================
                 // WING FLAPPING ANIMATION
@@ -1078,14 +1154,6 @@
             });
 
             // Bee controls
-            const beeScaleSlider = document.getElementById('bee-scale-slider');
-            const beeScaleValue = document.getElementById('bee-scale-value');
-            
-            beeScaleSlider.addEventListener('input', function(e) {
-                beeScale = parseFloat(e.target.value);
-                beeScaleValue.textContent = beeScale.toFixed(1);
-                updateBeeTransform();
-            });
 
             const beeXSlider = document.getElementById('bee-x-slider');
             const beeXValue = document.getElementById('bee-x-value');
@@ -1120,6 +1188,21 @@
             wingSpeedSlider.addEventListener('input', function(e) {
                 wingSpeed = parseInt(e.target.value);
                 wingSpeedValue.textContent = wingSpeed;
+            });
+
+            const beeRotationSlider = document.getElementById('bee-rotation-slider');
+            const beeRotationValue = document.getElementById('bee-rotation-value');
+            
+            beeRotationSlider.addEventListener('input', function(e) {
+                beeRotation = parseFloat(e.target.value);
+                beeRotationValue.textContent = beeRotation + '°';
+                updateBeeTransform();
+            });
+
+            const emotionSelector = document.getElementById('emotion-selector');
+            emotionSelector.addEventListener('change', function(e) {
+                currentEmotion = e.target.value;
+                updateFlowerColors();
             });
 
             // Initialize rotation info
