@@ -155,8 +155,15 @@ export default function FlowerArt({
     const rotationParams = moodParams?.rotationParams;
     
     if (!rotationParams) {
-      // Fallback to basic rotation
-      updateMoodRotation();
+      // Fallback to basic rotation with default animation
+      const t = Date.now() * 0.001;
+      petalLayersRef.current.forEach((layer, layerIndex) => {
+        const layerDirection = layerIndex % 2 === 0 ? 1 : -1;
+        const rotationSpeed = 0.02;
+        state.layerOffsets[layerIndex] += rotationSpeed * layerDirection;
+        state.layerOffsets[layerIndex] = state.layerOffsets[layerIndex] % 1;
+        if (state.layerOffsets[layerIndex] < 0) state.layerOffsets[layerIndex] += 1;
+      });
       return;
     }
     
@@ -252,6 +259,38 @@ export default function FlowerArt({
         (petal.material as THREE.MeshPhongMaterial).color.setHex(glowColor);
         (petal.material as THREE.MeshPhongMaterial).emissive = new THREE.Color(glowColor);
         (petal.material as THREE.MeshPhongMaterial).emissiveIntensity = heartbeatPulse * currentIntensity * 0.3;
+      });
+    });
+  };
+
+  // Fallback heartbeat animation when no mood params
+  const updateFallbackHeartbeat = () => {
+    const state = flowerStateRef.current;
+    const t = Date.now() * 0.001;
+    const heartbeatPeriod = 60 / 72; // Default 72 BPM
+    const heartbeatPhase = (t % heartbeatPeriod) / heartbeatPeriod;
+    
+    const pulse1 = Math.sin(heartbeatPhase * Math.PI * 2);
+    const pulse2 = Math.sin(heartbeatPhase * Math.PI * 4) * 0.3;
+    const heartbeatPulse = (pulse1 + pulse2) * 0.5 + 0.5;
+    
+    petalLayersRef.current.forEach((layer, layerIndex) => {
+      layer.forEach(petal => {
+        const baseColor = emotionColors[state.currentEmotion as keyof typeof emotionColors] || emotionColors["neutral"];
+        const hex = baseColor.replace('#', '');
+        const r = parseInt(hex.substr(0, 2), 16);
+        const g = parseInt(hex.substr(2, 2), 16);
+        const b = parseInt(hex.substr(4, 2), 16);
+        
+        const glowFactor = 1 + (heartbeatPulse * 0.4);
+        const glowR = Math.min(255, Math.floor(r * glowFactor));
+        const glowG = Math.min(255, Math.floor(g * glowFactor));
+        const glowB = Math.min(255, Math.floor(b * glowFactor));
+        
+        const glowColor = (glowR << 16) | (glowG << 8) | glowB;
+        (petal.material as THREE.MeshPhongMaterial).color.setHex(glowColor);
+        (petal.material as THREE.MeshPhongMaterial).emissive = new THREE.Color(glowColor);
+        (petal.material as THREE.MeshPhongMaterial).emissiveIntensity = heartbeatPulse * 0.4 * 0.3;
       });
     });
   };
@@ -644,11 +683,15 @@ export default function FlowerArt({
   const update = () => {
     const state = flowerStateRef.current;
     
-      // Update advanced mood-based rotation with alternating and individual control
-  updateAdvancedMoodRotation();
+    // Update mood-based rotation (with fallback)
+    updateAdvancedMoodRotation();
     
-      // Update advanced heartbeat glow effect
-  updateAdvancedHeartbeatGlow();
+    // Update heartbeat glow effect (with fallback)
+    if (moodParams?.heartbeatParams) {
+      updateAdvancedHeartbeatGlow();
+    } else {
+      updateFallbackHeartbeat();
+    }
     
       // Update all petal layers with individual rotations, offsets, and open/close animation
   const rotationStep = Math.PI * 2 / state.petalCount;
@@ -672,6 +715,11 @@ export default function FlowerArt({
         } else {
           openCloseAngle = openCloseParams.minOpenAngle + (baseAngle * (openCloseParams.maxOpenAngle - openCloseParams.minOpenAngle));
         }
+      } else {
+        // Fallback petal open/close animation
+        const openCloseSpeed = 1.5;
+        const baseAngle = Math.sin(t * openCloseSpeed) * 0.5 + 0.5;
+        openCloseAngle = 0.1 + (baseAngle * 0.2); // Subtle open/close effect
       }
       
       layer[i].rotateX((Math.PI / 2) * (state.petalRotation + state.layerRotations[layerIndex] + openCloseAngle));
