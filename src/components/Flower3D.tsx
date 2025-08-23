@@ -33,6 +33,11 @@ const getFlowerType = (shapeType: number): string => {
   }
 };
 
+// Helper function to round CSS values to avoid hydration mismatches
+const roundCSS = (value: number): number => {
+  return Math.round(value * 100) / 100;
+};
+
 export default function Flower3D({ mood, traits, isInteractive = true, size = 1 }: Flower3DProps) {
   const colors = getMoodColors(mood);
   const flowerType = getFlowerType(traits.coreShape);
@@ -83,8 +88,8 @@ export default function Flower3D({ mood, traits, isInteractive = true, size = 1 
               {Array.from({ length: traits.petalCount }).map((_, i) => {
                 const angle = (i / traits.petalCount) * 360;
                 const radius = petalSize + 10;
-                const x = Math.cos((angle * Math.PI) / 180) * radius;
-                const y = Math.sin((angle * Math.PI) / 180) * radius;
+                const x = roundCSS(Math.cos((angle * Math.PI) / 180) * radius);
+                const y = roundCSS(Math.sin((angle * Math.PI) / 180) * radius);
                 
                 return (
                   <div
@@ -94,8 +99,8 @@ export default function Flower3D({ mood, traits, isInteractive = true, size = 1 
                       left: `calc(50% + ${x}px)`,
                       top: `calc(50% + ${y}px)`,
                       transform: 'translate(-50%, -50%)',
-                      animationDelay: `${i * 0.1}s`,
-                      animationDuration: `${3 + mood * 0.2}s`
+                      animationDelay: `${roundCSS(i * 0.1)}s`,
+                      animationDuration: `${roundCSS(3 + mood * 0.2)}s`
                     }}
                   >
                     {/* Petal shape */}
@@ -117,8 +122,8 @@ export default function Flower3D({ mood, traits, isInteractive = true, size = 1 
               {Array.from({ length: Math.floor(traits.petalCount * 0.7) }).map((_, i) => {
                 const angle = (i / Math.floor(traits.petalCount * 0.7)) * 360 + 15;
                 const radius = petalSize - 5;
-                const x = Math.cos((angle * Math.PI) / 180) * radius;
-                const y = Math.sin((angle * Math.PI) / 180) * radius;
+                const x = roundCSS(Math.cos((angle * Math.PI) / 180) * radius);
+                const y = roundCSS(Math.sin((angle * Math.PI) / 180) * radius);
                 
                 return (
                   <div
@@ -128,8 +133,8 @@ export default function Flower3D({ mood, traits, isInteractive = true, size = 1 
                       left: `calc(50% + ${x}px)`,
                       top: `calc(50% + ${y}px)`,
                       transform: 'translate(-50%, -50%)',
-                      animationDelay: `${i * 0.15}s`,
-                      animationDuration: `${2.5 + mood * 0.2}s`
+                      animationDelay: `${roundCSS(i * 0.15)}s`,
+                      animationDuration: `${roundCSS(2.5 + mood * 0.2)}s`
                     }}
                   >
                     <div 
@@ -149,8 +154,8 @@ export default function Flower3D({ mood, traits, isInteractive = true, size = 1 
               {Array.from({ length: Math.floor(traits.petalCount * 0.4) }).map((_, i) => {
                 const angle = (i / Math.floor(traits.petalCount * 0.4)) * 360 + 30;
                 const radius = petalSize - 15;
-                const x = Math.cos((angle * Math.PI) / 180) * radius;
-                const y = Math.sin((angle * Math.PI) / 180) * radius;
+                const x = roundCSS(Math.cos((angle * Math.PI) / 180) * radius);
+                const y = roundCSS(Math.sin((angle * Math.PI) / 180) * radius);
                 
                 return (
                   <div
@@ -160,8 +165,8 @@ export default function Flower3D({ mood, traits, isInteractive = true, size = 1 
                       left: `calc(50% + ${x}px)`,
                       top: `calc(50% + ${y}px)`,
                       transform: 'translate(-50%, -50%)',
-                      animationDelay: `${i * 0.2}s`,
-                      animationDuration: `${2 + mood * 0.2}s`
+                      animationDelay: `${roundCSS(i * 0.2)}s`,
+                      animationDuration: `${roundCSS(2 + mood * 0.2)}s`
                     }}
                   >
                     <div 
@@ -184,7 +189,7 @@ export default function Flower3D({ mood, traits, isInteractive = true, size = 1 
                   className="absolute inset-0 rounded-full blur-lg animate-pulse"
                   style={{ 
                     backgroundColor: colors.primary,
-                    animationDuration: `${2 + mood * 0.3}s`
+                    animationDuration: `${roundCSS(2 + mood * 0.3)}s`
                   }}
                 />
                 
@@ -205,8 +210,8 @@ export default function Flower3D({ mood, traits, isInteractive = true, size = 1 
                   {Array.from({ length: 8 }).map((_, i) => {
                     const angle = (i / 8) * 360;
                     const radius = 6;
-                    const x = Math.cos((angle * Math.PI) / 180) * radius;
-                    const y = Math.sin((angle * Math.PI) / 180) * radius;
+                    const x = roundCSS(Math.cos((angle * Math.PI) / 180) * radius);
+                    const y = roundCSS(Math.sin((angle * Math.PI) / 180) * radius);
                     
                     return (
                       <div
@@ -232,10 +237,10 @@ export default function Flower3D({ mood, traits, isInteractive = true, size = 1 
                 className="absolute inset-0 border rounded-full animate-spin"
                 style={{
                   borderColor: colors.primary,
-                  opacity: 0.2 - (i * 0.05),
-                  animationDuration: `${15 + i * 3}s`,
+                  opacity: roundCSS(0.2 - (i * 0.05)),
+                  animationDuration: `${roundCSS(15 + i * 3)}s`,
                   animationDirection: i % 2 === 0 ? 'normal' : 'reverse',
-                  transform: `scale(${1.2 + i * 0.3})`
+                  transform: `scale(${roundCSS(1.2 + i * 0.3)})`
                 }}
               />
             ))}
@@ -247,7 +252,7 @@ export default function Flower3D({ mood, traits, isInteractive = true, size = 1 
           className="absolute inset-0 rounded-full blur-2xl opacity-30 animate-pulse"
           style={{ 
             backgroundColor: colors.primary,
-            animationDuration: `${4 + mood * 0.5}s`,
+            animationDuration: `${roundCSS(4 + mood * 0.5)}s`,
             transform: 'scale(1.5)'
           }}
         />
