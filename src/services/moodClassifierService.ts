@@ -2,119 +2,13 @@
 // MOOD CLASSIFIER API SERVICE
 // ========================================
 
+import { FlowerArtParameters } from './moodClassifierService';
+
 export interface MoodAnalysisRequest {
   text: string;
   streakDays?: number;
   communityMood?: number;
   tradingActivity?: number;
-}
-
-export interface FlowerArtParameters {
-  currentEmotion: string;
-  confidence: number;
-  confidencePercentage: number;
-  petalParams: {
-    layerCount: number;
-    petalCount: number;
-    baseLayerRadius: number;
-    layerRadiusDecrease: number;
-    petalRotation: number;
-    layerRotations: number[];
-    layerOffsets: number[];
-    geometrySegments: number;
-    geometryPhiStart: number;
-    geometryPhiLength: number;
-    geometryThetaStart: number;
-    geometryThetaLength: number;
-  };
-  petalOpenCloseParams: {
-    minOpenAngle: number;
-    maxOpenAngle: number;
-    openCloseSpeed: number;
-    individualLayerControl: boolean;
-    layerOpenCloseRanges: Array<{ min: number; max: number }>;
-  };
-  heartbeatSettings: {
-    bpm: number;
-    intensity: number;
-  };
-  heartbeatParams: {
-    pulseUpdateRate: number;
-    dualPulseEnabled: boolean;
-    secondaryPulseIntensity: number;
-    glowIntensityRange: { min: number; max: number };
-    bpmRange: { min: number; max: number };
-  };
-  moodSettings: {
-    intensity: number;
-    direction: number;
-  };
-  rotationParams: {
-    rotationUpdateRate: number;
-    alternatingEnabled: boolean;
-    individualLayerRotation: boolean;
-    rotationIntensityRange: { min: number; max: number };
-    directionOptions: { clockwise: number; counterclockwise: number };
-  };
-  stalkParams: {
-    baseLength: number;
-    minLength: number;
-    maxLength: number;
-    communityMoodThreshold: number;
-    communityMoodMultiplier: number;
-    growthSpeed: number;
-    decaySpeed: number;
-    currentLength: number;
-  };
-  connectorParams: {
-    baseColor: string;
-    tradingActivityColors: {
-      low: string;
-      medium: string;
-      high: string;
-      veryHigh: string;
-    };
-    tradingActivityThresholds: {
-      low: number;
-      medium: number;
-      high: number;
-    };
-    colorTransitionSpeed: number;
-    currentColor: string;
-  };
-  beeParams: {
-    baseScale: number;
-    basePosition: { x: number; y: number; z: number };
-    wingSpeed: number;
-    wingFlapRange: number;
-    wingFlapIntensity: number;
-    appearanceThreshold: number;
-    flightBobSpeed: number;
-    flightBobAmplitude: number;
-    rotationSpeed: number;
-    rotationAmplitude: number;
-    shouldAppear: boolean;
-  };
-  beeStreakRanges: {
-    "3-7": { xRange: { min: number; max: number }; zRange: { min: number; max: number }; yRange: { min: number; max: number } };
-    "7-14": { xRange: { min: number; max: number }; zRange: { min: number; max: number }; yRange: { min: number; max: number } };
-    "14-21": { xRange: { min: number; max: number }; zRange: { min: number; max: number }; yRange: { min: number; max: number } };
-    "21+": { xRange: { min: number; max: number }; zRange: { min: number; max: number }; yRange: { min: number; max: number } };
-  };
-  streakParams: {
-    goodMoodThreshold: number;
-    streakDecayRate: number;
-    maxStreakDays: number;
-    streakMultiplier: number;
-    currentStreakDays: number;
-    streakFeatures: {
-      beeAppearance: boolean;
-      beeRangeControl: boolean;
-      stalkGrowth: boolean;
-      glowIntensity: boolean;
-      rotationSpeed: boolean;
-    };
-  };
 }
 
 export interface MoodAnalysisResponse {
@@ -127,8 +21,8 @@ class MoodClassifierService {
   private baseUrl: string;
 
   constructor() {
-    // Use environment variable or default to local development
-    this.baseUrl = process.env.NEXT_PUBLIC_MOOD_CLASSIFIER_API_URL || 'http://localhost:5001';
+    // Use Railway backend URL - update this with your actual Railway URL
+    this.baseUrl = process.env.NEXT_PUBLIC_MOOD_CLASSIFIER_API_URL || 'https://shapes-of-mood-classifier-production.up.railway.app';
   }
 
   async analyzeMood(request: MoodAnalysisRequest): Promise<FlowerArtParameters> {
