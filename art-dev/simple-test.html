@@ -170,6 +170,13 @@
                         <option value="surprise">Surprise (Deep Pink)</option>
                     </select>
                 </div>
+                
+                <div class="control-group">
+                    <label>Mood Rotation:</label>
+                    <div id="mood-rotation-info" style="color: #00ff00; font-weight: bold;">
+                        Static (Sad)
+                    </div>
+                </div>
     </div>
 
     <div id="container-scene">
@@ -230,6 +237,8 @@
         };
         
         let currentEmotion = "neutral"; // Default emotion
+        let moodRotationSpeed = 0; // Rotation speed based on mood intensity
+        let moodRotationDirection = 1; // 1 for clockwise, -1 for counterclockwise
 
         function init() {
             container = document.querySelector("#container-scene");
@@ -262,6 +271,8 @@
         }
 
         init();
+        calculateMoodRotation(); // Initialize mood rotation system
+        updateMoodRotationDisplay(); // Initialize mood rotation display
 
         function generateFlower() {
             // Clear existing petal layers
@@ -339,6 +350,65 @@
                     petal.material.color.setHex(newColor);
                 });
             });
+        }
+        
+        // ========================================
+        // MOOD-BASED ROTATION SYSTEM
+        // ========================================
+        
+        function calculateMoodRotation() {
+            // Define mood intensity and rotation direction for each emotion
+            const moodSettings = {
+                "happy": { intensity: 0.8, direction: 1 },    // High intensity, clockwise
+                "joy": { intensity: 1.0, direction: 1 },      // Maximum intensity, clockwise
+                "sad": { intensity: 0.0, direction: 0 },      // No rotation (static)
+                "fear": { intensity: 0.6, direction: -1 },    // Medium intensity, counterclockwise
+                "anger": { intensity: 0.9, direction: -1 },   // High intensity, counterclockwise
+                "disgust": { intensity: 0.4, direction: -1 }, // Low intensity, counterclockwise
+                "shame": { intensity: 0.3, direction: -1 },   // Low intensity, counterclockwise
+                "surprise": { intensity: 0.7, direction: 1 }, // Medium-high intensity, clockwise
+                "neutral": { intensity: 0.2, direction: 1 }   // Low intensity, clockwise
+            };
+            
+            const mood = moodSettings[currentEmotion] || moodSettings["neutral"];
+            moodRotationSpeed = mood.intensity;
+            moodRotationDirection = mood.direction;
+        }
+        
+        function updateMoodRotation() {
+            // Apply mood-based rotation to layer offsets
+            if (moodRotationSpeed > 0) {
+                petalLayers.forEach((layer, layerIndex) => {
+                    // Alternate rotation direction for each layer
+                    // Even layers (0, 2, 4...) rotate in the base direction
+                    // Odd layers (1, 3, 5...) rotate in the opposite direction
+                    const layerDirection = layerIndex % 2 === 0 ? moodRotationDirection : -moodRotationDirection;
+                    
+                    // Update layer offset based on mood rotation with alternating direction
+                    layerOffsets[layerIndex] += moodRotationSpeed * layerDirection * 0.02;
+                    
+                    // Keep offset within 0-1 range
+                    layerOffsets[layerIndex] = layerOffsets[layerIndex] % 1;
+                    if (layerOffsets[layerIndex] < 0) layerOffsets[layerIndex] += 1;
+                });
+            }
+        }
+        
+        function updateMoodRotationDisplay() {
+            const moodInfo = document.getElementById('mood-rotation-info');
+            if (moodRotationSpeed === 0) {
+                moodInfo.textContent = 'Static (Sad)';
+                moodInfo.style.color = '#4169E1'; // Blue for sad
+            } else {
+                const baseDirection = moodRotationDirection === 1 ? 'Clockwise' : 'Counter-clockwise';
+                const oppositeDirection = moodRotationDirection === 1 ? 'Counter-clockwise' : 'Clockwise';
+                const intensity = moodRotationSpeed === 1.0 ? 'Maximum' : 
+                                 moodRotationSpeed >= 0.8 ? 'High' :
+                                 moodRotationSpeed >= 0.6 ? 'Medium' :
+                                 moodRotationSpeed >= 0.4 ? 'Low' : 'Very Low';
+                moodInfo.textContent = `Alternating: ${baseDirection}/${oppositeDirection} (${intensity})`;
+                moodInfo.style.color = moodRotationDirection === 1 ? '#00ff00' : '#ff6600'; // Green for clockwise, orange for counter-clockwise
+            }
         }
         
         // ========================================
@@ -1016,6 +1086,9 @@
         }
 
         function update() {
+            // Update mood-based rotation
+            updateMoodRotation();
+            
             // Update all petal layers with individual rotations and offsets
             petalLayers.forEach((layer, layerIndex) => {
                 for (var i = 0; i < petalCount; i++) {
@@ -1202,7 +1275,9 @@
             const emotionSelector = document.getElementById('emotion-selector');
             emotionSelector.addEventListener('change', function(e) {
                 currentEmotion = e.target.value;
+                calculateMoodRotation(); // Calculate new mood rotation parameters
                 updateFlowerColors();
+                updateMoodRotationDisplay(); // Update the mood rotation info display
             });
 
             // Initialize rotation info
