@@ -486,6 +486,9 @@ export default function FlowerTypingEffect({ text, className = "" }: FlowerTypin
 
     window.addEventListener('resize', handleResize);
 
+    // Store ref value for cleanup
+    const container = containerRef.current;
+
     // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize);
@@ -494,7 +497,6 @@ export default function FlowerTypingEffect({ text, className = "" }: FlowerTypin
       }
       if (renderer) {
         renderer.dispose();
-        const container = containerRef.current;
         if (container) {
           container.innerHTML = '';
         }
