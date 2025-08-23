@@ -23,6 +23,17 @@ This file tracks all third-party resources, inspirations, and code examples used
 - **Inspiration**: Various Three.js geometry tutorials and generative art patterns
 - **License**: Custom implementation
 
+### Flower Typing Effect Component
+- **Status**: ✅ Implemented
+- **Description**: Three.js flower typing effect with instanced meshes
+- **Features**:
+  - Text rendered as growing flowers and leaves
+  - Instanced mesh optimization for performance
+  - Dynamic flower and leaf particles
+  - Animated growth and rotation effects
+- **Inspiration**: Codrops tutorial by @sol187 (https://tympanus.net/codrops/2022/11/08/3d-typing-effects-with-three-js/)
+- **License**: Adapted from Codrops tutorial (public domain)
+
 ### Animated Text Component
 - **Status**: ✅ Implemented
 - **Description**: Canvas-based animated text with particle effects

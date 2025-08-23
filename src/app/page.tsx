@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Flower, Heart, Zap, Users } from 'lucide-react';
 import InteractiveBackground from '@/components/InteractiveBackground';
-import AnimatedText from '@/components/AnimatedText';
+import FlowerTypingEffect from '@/components/FlowerTypingEffect';
 
 export default function Home() {
   return (
@@ -22,13 +22,12 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <div className="mb-6">
-              <AnimatedText 
-                text="Shapes of Mind" 
-                className="text-6xl md:text-8xl font-bold"
-                speed={100}
-              />
-            </div>
+                                <div className="mb-6 h-32 md:h-48">
+                      <FlowerTypingEffect
+                        text="Shapes of Mind"
+                        className="w-full h-full"
+                      />
+                    </div>
             <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto">
               Living NFT flowers that reflect your mood and the collective consciousness of our community. 
               Each flower evolves based on your emotional state and on-chain interactions.
