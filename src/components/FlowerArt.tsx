@@ -823,7 +823,7 @@ export default function FlowerArt({
     sceneRef.current = scene;
 
     // Camera
-    const camera = new THREE.PerspectiveCamera(40, size / size, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(40, containerRef.current.clientWidth / containerRef.current.clientHeight, 0.1, 1000);
     camera.position.set(0, 50, 120);
 
     // Lights
@@ -835,7 +835,7 @@ export default function FlowerArt({
 
     // Renderer
     const renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
-    renderer.setSize(size, size);
+    renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
     renderer.setPixelRatio(window.devicePixelRatio > 1 ? 2 : 1);
     // renderer.physicallyCorrectLights = true; // Removed for compatibility
     renderer.shadowMap.enabled = true;
@@ -897,6 +897,23 @@ export default function FlowerArt({
     console.log('Starting animation loop');
     animate();
 
+    // Handle resize
+    const handleResize = () => {
+      if (containerRef.current && renderer && camera) {
+        const width = containerRef.current.clientWidth;
+        const height = containerRef.current.clientHeight;
+        
+        renderer.setSize(width, height);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+        
+        console.log('Resized to:', width, 'x', height);
+      }
+    };
+
+    // Add resize listener
+    window.addEventListener('resize', handleResize);
+
     // Cleanup
     return () => {
       if (animationIdRef.current) {
@@ -905,6 +922,7 @@ export default function FlowerArt({
       if (controlsRef.current) {
         controlsRef.current.dispose();
       }
+      window.removeEventListener('resize', handleResize);
       if (renderer) {
         renderer.dispose();
         if (containerRef.current) {
@@ -917,8 +935,8 @@ export default function FlowerArt({
   return (
     <div 
       ref={containerRef} 
-      className={`${className}`}
-      style={{ width: size, height: size }}
+      className={`${className} flex items-center justify-center`}
+      style={{ width: '100%', height: '100%' }}
     />
   );
 }
