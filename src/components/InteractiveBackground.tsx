@@ -1,19 +1,15 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 
 // Interactive particle animation based on https://codepen.io/sol187/pen/zYJgyQB
 // Original author credit: @sol187
 export default function InteractiveBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  useEffect(() => {
-    if (!isClient) return;
+    // Only run on client side
+    if (typeof window === 'undefined') return;
     
     const canvas = canvasRef.current;
     if (!canvas) return;
