@@ -417,8 +417,47 @@ export default function FlowerArt({
         const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
         
         if (flowerGroup) {
-          flowerGroup.rotation.x = y * 0.2;
-          flowerGroup.rotation.y = x * 0.2;
+          // Gentle rotation on hover
+          flowerGroup.rotation.x = y * 0.1;
+          flowerGroup.rotation.y = x * 0.1;
+          
+          // Add glow effect on hover
+          flowerGroup.children.forEach((child, index) => {
+            if (child instanceof THREE.Mesh) {
+              // Calculate distance from center for glow intensity
+              const distanceFromCenter = Math.sqrt(x * x + y * y);
+              const glowIntensity = Math.max(0.1, 1 - distanceFromCenter) * 0.5;
+              
+              // Increase emissive intensity for glow effect
+              child.material.emissiveIntensity = traits.glowIntensity * (0.3 + glowIntensity);
+              
+              // Add subtle scale effect for petals
+              if (index > 0) { // Skip center, only petals
+                const scale = 1 + glowIntensity * 0.1;
+                child.scale.setScalar(scale);
+              }
+            }
+          });
+        }
+      };
+
+      const handleMouseLeave = () => {
+        if (flowerGroup) {
+          // Reset rotation and glow when mouse leaves
+          flowerGroup.rotation.x = 0;
+          flowerGroup.rotation.y = 0;
+          
+          // Reset emissive intensity to normal
+          flowerGroup.children.forEach((child) => {
+            if (child instanceof THREE.Mesh) {
+              child.material.emissiveIntensity = traits.glowIntensity * 0.2;
+              
+              // Reset scale for petals
+              if (child !== flowerGroup.children[0]) { // Skip center
+                child.scale.setScalar(0.8 + (traits.mood / 10) * 0.3);
+              }
+            }
+          });
         }
       };
 
@@ -430,10 +469,12 @@ export default function FlowerArt({
       };
 
       renderer.domElement.addEventListener('mousemove', handleMouseMove);
+      renderer.domElement.addEventListener('mouseleave', handleMouseLeave);
       renderer.domElement.addEventListener('click', handleClick);
 
       return () => {
         renderer.domElement.removeEventListener('mousemove', handleMouseMove);
+        renderer.domElement.removeEventListener('mouseleave', handleMouseLeave);
         renderer.domElement.removeEventListener('click', handleClick);
         cleanup();
       };
@@ -450,7 +491,7 @@ export default function FlowerArt({
     >
       {interactive && (
         <div className="absolute bottom-2 left-2 text-xs text-gray-400">
-          Click to change mood • Hover to rotate
+          Click to change mood • Hover to glow
         </div>
       )}
     </div>
