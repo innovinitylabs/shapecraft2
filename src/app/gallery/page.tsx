@@ -334,7 +334,7 @@ export default function GalleryPage() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400">Core Shape:</span>
-                      <span className="text-white capitalize">{nft.traits.coreShape}</span>
+                      <span className="text-white capitalize">Sunflower</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400">Last Updated:</span>
