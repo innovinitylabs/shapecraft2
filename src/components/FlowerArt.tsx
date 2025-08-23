@@ -5,7 +5,10 @@ import * as THREE from 'three';
 import { FlowerArtParameters } from '@/services/moodClassifierService';
 
 interface FlowerArtProps {
-  // Mood classifier parameters
+  // Full mood classifier parameters
+  moodParams?: FlowerArtParameters;
+  
+  // Individual parameters for backward compatibility
   emotion?: string;
   petalCount?: number;
   layerCount?: number;
@@ -39,6 +42,7 @@ export function generateFlowerTraits(index: number) {
 }
 
 export default function FlowerArt({ 
+  moodParams,
   emotion = 'neutral',
   petalCount = 6,
   layerCount = 2,
@@ -56,22 +60,37 @@ export default function FlowerArt({
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const animationIdRef = useRef<number | null>(null);
   
+  // Extract parameters from moodParams or use defaults
+  const effectiveEmotion = moodParams?.currentEmotion || emotion;
+  const effectivePetalCount = moodParams?.petalParams.petalCount || petalCount;
+  const effectiveLayerCount = moodParams?.petalParams.layerCount || layerCount;
+  const effectiveHeartbeatBPM = moodParams?.heartbeatSettings.bpm || heartbeatBPM;
+  const effectiveHeartbeatIntensity = moodParams?.heartbeatSettings.intensity || heartbeatIntensity;
+  const effectiveRotationSpeed = moodParams?.moodSettings.intensity || rotationSpeed;
+  const effectiveRotationDirection = moodParams?.moodSettings.direction || rotationDirection;
+  const effectiveStalkLength = moodParams?.stalkParams.currentLength || 10;
+  const effectiveBeePosition = moodParams?.beeParams.basePosition || { x: 0, y: 2.1, z: 0 };
+  const effectiveWingSpeed = moodParams?.beeParams.wingSpeed || 18;
+  const effectivePetalRotation = moodParams?.petalParams.petalRotation || 0.1;
+  const effectiveLayerRotations = moodParams?.petalParams.layerRotations || new Array(effectiveLayerCount).fill(0);
+  const effectiveLayerOffsets = moodParams?.petalParams.layerOffsets || new Array(effectiveLayerCount).fill(0);
+
   // Flower state
   const flowerStateRef = useRef({
-    petalRotation: 0.1,
-    petalCount: petalCount,
-    layerCount: layerCount,
-    layerRotations: new Array(layerCount).fill(0),
-    layerOffsets: new Array(layerCount).fill(0),
-    stalkLength: 10,
-    beePosition: { x: 0, y: 2.1, z: 0 },
+    petalRotation: effectivePetalRotation,
+    petalCount: effectivePetalCount,
+    layerCount: effectiveLayerCount,
+    layerRotations: effectiveLayerRotations,
+    layerOffsets: effectiveLayerOffsets,
+    stalkLength: effectiveStalkLength,
+    beePosition: effectiveBeePosition,
     beeRotation: 0,
-    wingSpeed: 18,
-    currentEmotion: emotion,
-    moodRotationSpeed: rotationSpeed,
-    moodRotationDirection: rotationDirection,
-    heartbeatBPM: heartbeatBPM,
-    heartbeatIntensity: heartbeatIntensity
+    wingSpeed: effectiveWingSpeed,
+    currentEmotion: effectiveEmotion,
+    moodRotationSpeed: effectiveRotationSpeed,
+    moodRotationDirection: effectiveRotationDirection,
+    heartbeatBPM: effectiveHeartbeatBPM,
+    heartbeatIntensity: effectiveHeartbeatIntensity
   });
 
   // Emotion-based colors
@@ -607,13 +626,19 @@ export default function FlowerArt({
     // Update state with new props
     flowerStateRef.current = {
       ...flowerStateRef.current,
-      petalCount,
-      layerCount,
-      currentEmotion: emotion,
-      moodRotationSpeed: rotationSpeed,
-      moodRotationDirection: rotationDirection,
-      heartbeatBPM,
-      heartbeatIntensity
+      petalCount: effectivePetalCount,
+      layerCount: effectiveLayerCount,
+      currentEmotion: effectiveEmotion,
+      moodRotationSpeed: effectiveRotationSpeed,
+      moodRotationDirection: effectiveRotationDirection,
+      heartbeatBPM: effectiveHeartbeatBPM,
+      heartbeatIntensity: effectiveHeartbeatIntensity,
+      petalRotation: effectivePetalRotation,
+      layerRotations: effectiveLayerRotations,
+      layerOffsets: effectiveLayerOffsets,
+      stalkLength: effectiveStalkLength,
+      beePosition: effectiveBeePosition,
+      wingSpeed: effectiveWingSpeed
     };
 
     // Scene setup
@@ -667,7 +692,7 @@ export default function FlowerArt({
         }
       }
     };
-  }, [emotion, petalCount, layerCount, heartbeatBPM, heartbeatIntensity, rotationSpeed, rotationDirection, size]);
+  }, [moodParams, emotion, petalCount, layerCount, heartbeatBPM, heartbeatIntensity, rotationSpeed, rotationDirection, size]);
 
   return (
     <div 

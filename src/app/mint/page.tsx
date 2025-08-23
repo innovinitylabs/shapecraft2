@@ -168,13 +168,7 @@ export default function MintPage() {
                   <div className="relative h-96 bg-black/20 rounded-xl overflow-hidden">
                     {moodParams ? (
                       <FlowerArt
-                        emotion={moodParams.currentEmotion}
-                        petalCount={moodParams.petalParams.petalCount}
-                        layerCount={moodParams.petalParams.layerCount}
-                        heartbeatBPM={moodParams.heartbeatSettings.bpm}
-                        heartbeatIntensity={moodParams.heartbeatSettings.intensity}
-                        rotationSpeed={moodParams.moodSettings.intensity}
-                        rotationDirection={moodParams.moodSettings.direction}
+                        moodParams={moodParams}
                         className="w-full h-full"
                       />
                     ) : (
