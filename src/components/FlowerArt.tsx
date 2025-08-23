@@ -19,7 +19,7 @@ interface FlowerArtProps {
   rotationDirection?: number;
   
   // Legacy props for backward compatibility
-  traits?: any;
+  traits?: Record<string, unknown>;
   size?: number;
   interactive?: boolean;
   onMoodChange?: (mood: number) => void;
@@ -52,7 +52,9 @@ export default function FlowerArt({
   rotationSpeed = 0.2,
   rotationDirection = 1,
   size = 300,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interactive = false,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onMoodChange,
   className = ''
 }: FlowerArtProps) {
@@ -157,6 +159,7 @@ export default function FlowerArt({
     
     if (!rotationParams) {
       // Fallback to basic rotation with default animation
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const t = Date.now() * 0.001;
       petalLayersRef.current.forEach((layer, layerIndex) => {
         const layerDirection = layerIndex % 2 === 0 ? 1 : -1;
@@ -213,6 +216,7 @@ export default function FlowerArt({
   };
 
   // Legacy mood rotation function for backward compatibility
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const updateMoodRotation = () => {
     const state = flowerStateRef.current;
     if (state.moodRotationSpeed > 0) {
@@ -238,6 +242,7 @@ export default function FlowerArt({
     const dualPulseEnabled = heartbeatParams?.dualPulseEnabled || false;
     const secondaryPulseIntensity = heartbeatParams?.secondaryPulseIntensity || 0.3;
     const glowIntensityRange = heartbeatParams?.glowIntensityRange || { min: 0.1, max: 0.8 };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const bpmRange = heartbeatParams?.bpmRange || { min: 60, max: 120 };
     
     // Primary pulse
@@ -255,7 +260,7 @@ export default function FlowerArt({
     const intensityRange = glowIntensityRange.max - glowIntensityRange.min;
     const currentIntensity = glowIntensityRange.min + (heartbeatPulse * intensityRange);
     
-    petalLayersRef.current.forEach((layer, layerIndex) => {
+    petalLayersRef.current.forEach((layer) => {
       layer.forEach(petal => {
         const baseColor = emotionColors[state.currentEmotion as keyof typeof emotionColors] || emotionColors["neutral"];
         const hex = baseColor.replace('#', '');
@@ -287,7 +292,7 @@ export default function FlowerArt({
     const pulse2 = Math.sin(heartbeatPhase * Math.PI * 4) * 0.3;
     const heartbeatPulse = (pulse1 + pulse2) * 0.5 + 0.5;
     
-    petalLayersRef.current.forEach((layer, layerIndex) => {
+    petalLayersRef.current.forEach((layer) => {
       layer.forEach(petal => {
         const baseColor = emotionColors[state.currentEmotion as keyof typeof emotionColors] || emotionColors["neutral"];
         const hex = baseColor.replace('#', '');
@@ -309,6 +314,7 @@ export default function FlowerArt({
   };
 
   // Legacy heartbeat function for backward compatibility
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const updateHeartbeatGlow = () => {
     updateAdvancedHeartbeatGlow();
   };
@@ -672,16 +678,16 @@ export default function FlowerArt({
     
     // Generate layers
     for (let layer = 0; layer < state.layerCount; layer++) {
-      let layerRadius = 12 - (layer * 2);
-      let layerColor = getEmotionColor(state.currentEmotion, layer);
+      const layerRadius = 12 - (layer * 2);
+      const layerColor = getEmotionColor(state.currentEmotion, layer);
       
-      let petalMat = new THREE.MeshPhongMaterial({color: layerColor, side: THREE.DoubleSide});
-      let petalGeom = new THREE.SphereGeometry(layerRadius, 20, 20, Math.PI / 3, Math.PI / 3, 0, Math.PI);
+      const petalMat = new THREE.MeshPhongMaterial({color: layerColor, side: THREE.DoubleSide});
+      const petalGeom = new THREE.SphereGeometry(layerRadius, 20, 20, Math.PI / 3, Math.PI / 3, 0, Math.PI);
       petalGeom.translate(0, -layerRadius, 0);
       petalGeom.rotateX(Math.PI / 2);
-      let petalMesh = new THREE.Mesh(petalGeom, petalMat);
+      const petalMesh = new THREE.Mesh(petalGeom, petalMat);
 
-      let layerMeshes = [];
+      const layerMeshes = [];
       for (let i = 0; i < state.petalCount; i++) {
         layerMeshes[i] = petalMesh.clone();
         sceneRef.current?.add(layerMeshes[i]);
@@ -720,7 +726,7 @@ export default function FlowerArt({
     const t = Date.now() * 0.001;
     
     petalLayersRef.current.forEach((layer, layerIndex) => {
-      for (var i = 0; i < state.petalCount; i++) {
+      for (let i = 0; i < state.petalCount; i++) {
         layer[i].rotation.set(0, 0, 0);
         layer[i].rotateY((rotationStep * i) + (state.layerOffsets[layerIndex] * Math.PI * 2));
         
@@ -907,8 +913,9 @@ export default function FlowerArt({
       }
       if (renderer) {
         renderer.dispose();
-        if (containerRef.current) {
-          containerRef.current.innerHTML = '';
+        const container = containerRef.current;
+        if (container) {
+          container.innerHTML = '';
         }
       }
     };
