@@ -23,6 +23,17 @@ This file tracks all third-party resources, inspirations, and code examples used
 - **Inspiration**: Various Three.js geometry tutorials and generative art patterns
 - **License**: Custom implementation
 
+### Animated Text Component
+- **Status**: ✅ Implemented
+- **Description**: Canvas-based animated text with particle effects
+- **Features**:
+  - Character-by-character text animation
+  - Particle explosion effects for each character
+  - Dynamic color variations
+  - Gravity and physics simulation
+- **Inspiration**: CodePen by @ksenia-k (https://codepen.io/ksenia-k/pen/WNyxXpO)
+- **License**: Adapted from CodePen (public domain)
+
 ## 🛠️ Libraries & Frameworks
 
 ### Three.js
