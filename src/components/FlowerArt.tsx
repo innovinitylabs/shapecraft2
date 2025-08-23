@@ -161,9 +161,21 @@ export default function FlowerArt({
       petalLayersRef.current.forEach((layer, layerIndex) => {
         const layerDirection = layerIndex % 2 === 0 ? 1 : -1;
         const rotationSpeed = 0.02;
+        const oldOffset = state.layerOffsets[layerIndex];
         state.layerOffsets[layerIndex] += rotationSpeed * layerDirection;
         state.layerOffsets[layerIndex] = state.layerOffsets[layerIndex] % 1;
         if (state.layerOffsets[layerIndex] < 0) state.layerOffsets[layerIndex] += 1;
+        
+        // Debug: Log layer offset changes (only occasionally)
+        if (Math.random() < 0.01 && layerIndex === 0) {
+          console.log('Layer offset update:', {
+            layerIndex,
+            oldOffset: oldOffset.toFixed(3),
+            newOffset: state.layerOffsets[layerIndex].toFixed(3),
+            direction: layerDirection,
+            speed: rotationSpeed
+          });
+        }
       });
       return;
     }
@@ -703,38 +715,49 @@ export default function FlowerArt({
       updateFallbackHeartbeat();
     }
     
-      // Update all petal layers with individual rotations, offsets, and open/close animation
-  const rotationStep = Math.PI * 2 / state.petalCount;
-  const t = Date.now() * 0.001;
-  
-  petalLayersRef.current.forEach((layer, layerIndex) => {
-    for (var i = 0; i < state.petalCount; i++) {
-      layer[i].rotation.set(0, 0, 0);
-      layer[i].rotateY((rotationStep * i) + (state.layerOffsets[layerIndex] * Math.PI * 2));
-      
-      // Petal open/close animation
-      let openCloseAngle = 0;
-      if (moodParams?.petalOpenCloseParams) {
-        const openCloseParams = moodParams.petalOpenCloseParams;
-        const openCloseSpeed = openCloseParams.openCloseSpeed || 1;
-        const baseAngle = Math.sin(t * openCloseSpeed) * 0.5 + 0.5; // 0 to 1
+    // Update all petal layers with individual rotations, offsets, and open/close animation
+    const rotationStep = Math.PI * 2 / state.petalCount;
+    const t = Date.now() * 0.001;
+    
+    petalLayersRef.current.forEach((layer, layerIndex) => {
+      for (var i = 0; i < state.petalCount; i++) {
+        layer[i].rotation.set(0, 0, 0);
+        layer[i].rotateY((rotationStep * i) + (state.layerOffsets[layerIndex] * Math.PI * 2));
         
-        if (openCloseParams.individualLayerControl && openCloseParams.layerOpenCloseRanges[layerIndex]) {
-          const range = openCloseParams.layerOpenCloseRanges[layerIndex];
-          openCloseAngle = range.min + (baseAngle * (range.max - range.min));
-        } else {
-          openCloseAngle = openCloseParams.minOpenAngle + (baseAngle * (openCloseParams.maxOpenAngle - openCloseParams.minOpenAngle));
+        // Debug: Log rotation values (only occasionally)
+        if (Math.random() < 0.001 && layerIndex === 0 && i === 0) {
+          console.log('Petal rotation:', {
+            layerIndex,
+            petalIndex: i,
+            rotationY: layer[i].rotation.y,
+            layerOffset: state.layerOffsets[layerIndex],
+            petalRotation: state.petalRotation
+          });
         }
-      } else {
-        // Fallback petal open/close animation
-        const openCloseSpeed = 1.5;
-        const baseAngle = Math.sin(t * openCloseSpeed) * 0.5 + 0.5;
-        openCloseAngle = 0.1 + (baseAngle * 0.2); // Subtle open/close effect
+        
+        // Petal open/close animation
+        let openCloseAngle = 0;
+        if (moodParams?.petalOpenCloseParams) {
+          const openCloseParams = moodParams.petalOpenCloseParams;
+          const openCloseSpeed = openCloseParams.openCloseSpeed || 1;
+          const baseAngle = Math.sin(t * openCloseSpeed) * 0.5 + 0.5; // 0 to 1
+          
+          if (openCloseParams.individualLayerControl && openCloseParams.layerOpenCloseRanges[layerIndex]) {
+            const range = openCloseParams.layerOpenCloseRanges[layerIndex];
+            openCloseAngle = range.min + (baseAngle * (range.max - range.min));
+          } else {
+            openCloseAngle = openCloseParams.minOpenAngle + (baseAngle * (openCloseParams.maxOpenAngle - openCloseParams.minOpenAngle));
+          }
+        } else {
+          // Fallback petal open/close animation
+          const openCloseSpeed = 1.5;
+          const baseAngle = Math.sin(t * openCloseSpeed) * 0.5 + 0.5;
+          openCloseAngle = 0.1 + (baseAngle * 0.2); // Subtle open/close effect
+        }
+        
+        layer[i].rotateX((Math.PI / 2) * (state.petalRotation + state.layerRotations[layerIndex] + openCloseAngle));
       }
-      
-      layer[i].rotateX((Math.PI / 2) * (state.petalRotation + state.layerRotations[layerIndex] + openCloseAngle));
-    }
-  });
+    });
     
     // Update connector length based on petal positions
     updateConnectorLength();
