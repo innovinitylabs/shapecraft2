@@ -59,6 +59,7 @@ export default function FlowerArt({
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const controlsRef = useRef<OrbitControls | null>(null);
   const animationIdRef = useRef<number | null>(null);
   
   // Extract parameters from moodParams or use defaults
@@ -822,6 +823,18 @@ export default function FlowerArt({
     controls.minDistance = 50;
     controls.maxDistance = 300;
     controls.update();
+    
+    // Store controls reference for updates
+    controlsRef.current = controls;
+    
+    // Debug: Log controls setup
+    console.log('OrbitControls created:', {
+      enabled: controls.enabled,
+      enableZoom: controls.enableZoom,
+      enablePan: controls.enablePan,
+      enableRotate: controls.enableRotate,
+      target: controls.target
+    });
 
     // Initialize flower
     calculateMoodRotation();
@@ -838,6 +851,7 @@ export default function FlowerArt({
     const animate = () => {
       animationIdRef.current = requestAnimationFrame(animate);
       update();
+      controlsRef.current?.update();
       renderer.render(scene, camera);
     };
     
@@ -849,6 +863,9 @@ export default function FlowerArt({
     return () => {
       if (animationIdRef.current) {
         cancelAnimationFrame(animationIdRef.current);
+      }
+      if (controlsRef.current) {
+        controlsRef.current.dispose();
       }
       if (renderer) {
         renderer.dispose();
