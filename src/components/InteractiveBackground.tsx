@@ -139,7 +139,7 @@ export default function InteractiveBackground() {
 
           vec3 color = base * flower_mask + (flower_new + flower_mid + stem);
           color *= u_clean;
-          color = clamp(color, vec3(.0, .0, .15), vec3(1., 1., .4));
+          color = clamp(color, vec3(.0, .0, .0), vec3(1., 1., 1.));
 
           gl_FragColor = vec4(color, 1.);
       }
