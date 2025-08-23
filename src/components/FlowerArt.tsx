@@ -148,7 +148,50 @@ export default function FlowerArt({
     flowerStateRef.current.moodRotationDirection = mood.direction;
   };
 
-  // Update mood rotation
+  // Update advanced mood rotation with alternating and individual control
+  const updateAdvancedMoodRotation = () => {
+    const state = flowerStateRef.current;
+    const rotationParams = moodParams?.rotationParams;
+    
+    if (!rotationParams) {
+      // Fallback to basic rotation
+      updateMoodRotation();
+      return;
+    }
+    
+    const rotationUpdateRate = rotationParams.rotationUpdateRate || 1;
+    const alternatingEnabled = rotationParams.alternatingEnabled || true;
+    const individualLayerRotation = rotationParams.individualLayerRotation || false;
+    const rotationIntensityRange = rotationParams.rotationIntensityRange || { min: 0.01, max: 0.05 };
+    const directionOptions = rotationParams.directionOptions || { clockwise: 1, counterclockwise: -1 };
+    
+    if (state.moodRotationSpeed > 0) {
+      petalLayersRef.current.forEach((layer, layerIndex) => {
+        let layerDirection = state.moodRotationDirection;
+        
+        // Apply alternating direction if enabled
+        if (alternatingEnabled) {
+          layerDirection = layerIndex % 2 === 0 ? directionOptions.clockwise : directionOptions.counterclockwise;
+        }
+        
+        // Apply individual layer rotation if enabled
+        let rotationSpeed = state.moodRotationSpeed;
+        if (individualLayerRotation) {
+          const intensityRange = rotationIntensityRange.max - rotationIntensityRange.min;
+          rotationSpeed = rotationIntensityRange.min + (Math.random() * intensityRange);
+        }
+        
+        // Update layer offset based on advanced rotation parameters
+        state.layerOffsets[layerIndex] += rotationSpeed * layerDirection * 0.02 * rotationUpdateRate;
+        
+        // Keep offset within 0-1 range
+        state.layerOffsets[layerIndex] = state.layerOffsets[layerIndex] % 1;
+        if (state.layerOffsets[layerIndex] < 0) state.layerOffsets[layerIndex] += 1;
+      });
+    }
+  };
+
+  // Legacy mood rotation function for backward compatibility
   const updateMoodRotation = () => {
     const state = flowerStateRef.current;
     if (state.moodRotationSpeed > 0) {
@@ -161,16 +204,35 @@ export default function FlowerArt({
     }
   };
 
-  // Update heartbeat glow
-  const updateHeartbeatGlow = () => {
+  // Update advanced heartbeat glow with dual pulse and ranges
+  const updateAdvancedHeartbeatGlow = () => {
     const state = flowerStateRef.current;
     const t = Date.now() * 0.001;
     const heartbeatPeriod = 60 / state.heartbeatBPM;
     const heartbeatPhase = (t % heartbeatPeriod) / heartbeatPeriod;
     
-    const pulse1 = Math.sin(heartbeatPhase * Math.PI * 2);
-    const pulse2 = Math.sin(heartbeatPhase * Math.PI * 4) * 0.3;
+    // Advanced heartbeat parameters
+    const heartbeatParams = moodParams?.heartbeatParams;
+    const pulseUpdateRate = heartbeatParams?.pulseUpdateRate || 1;
+    const dualPulseEnabled = heartbeatParams?.dualPulseEnabled || false;
+    const secondaryPulseIntensity = heartbeatParams?.secondaryPulseIntensity || 0.3;
+    const glowIntensityRange = heartbeatParams?.glowIntensityRange || { min: 0.1, max: 0.8 };
+    const bpmRange = heartbeatParams?.bpmRange || { min: 60, max: 120 };
+    
+    // Primary pulse
+    const pulse1 = Math.sin(heartbeatPhase * Math.PI * 2 * pulseUpdateRate);
+    
+    // Secondary pulse (if enabled)
+    let pulse2 = 0;
+    if (dualPulseEnabled) {
+      pulse2 = Math.sin(heartbeatPhase * Math.PI * 4 * pulseUpdateRate) * secondaryPulseIntensity;
+    }
+    
     const heartbeatPulse = (pulse1 + pulse2) * 0.5 + 0.5;
+    
+    // Apply intensity range
+    const intensityRange = glowIntensityRange.max - glowIntensityRange.min;
+    const currentIntensity = glowIntensityRange.min + (heartbeatPulse * intensityRange);
     
     petalLayersRef.current.forEach((layer, layerIndex) => {
       layer.forEach(petal => {
@@ -180,7 +242,7 @@ export default function FlowerArt({
         const g = parseInt(hex.substr(2, 2), 16);
         const b = parseInt(hex.substr(4, 2), 16);
         
-        const glowFactor = 1 + (heartbeatPulse * state.heartbeatIntensity);
+        const glowFactor = 1 + (heartbeatPulse * currentIntensity);
         const glowR = Math.min(255, Math.floor(r * glowFactor));
         const glowG = Math.min(255, Math.floor(g * glowFactor));
         const glowB = Math.min(255, Math.floor(b * glowFactor));
@@ -188,9 +250,14 @@ export default function FlowerArt({
         const glowColor = (glowR << 16) | (glowG << 8) | glowB;
         (petal.material as THREE.MeshPhongMaterial).color.setHex(glowColor);
         (petal.material as THREE.MeshPhongMaterial).emissive = new THREE.Color(glowColor);
-        (petal.material as THREE.MeshPhongMaterial).emissiveIntensity = heartbeatPulse * state.heartbeatIntensity * 0.3;
+        (petal.material as THREE.MeshPhongMaterial).emissiveIntensity = heartbeatPulse * currentIntensity * 0.3;
       });
     });
+  };
+
+  // Legacy heartbeat function for backward compatibility
+  const updateHeartbeatGlow = () => {
+    updateAdvancedHeartbeatGlow();
   };
 
   // Create bee
@@ -576,21 +643,39 @@ export default function FlowerArt({
   const update = () => {
     const state = flowerStateRef.current;
     
-    // Update mood-based rotation
-    updateMoodRotation();
+      // Update advanced mood-based rotation with alternating and individual control
+  updateAdvancedMoodRotation();
     
-    // Update heartbeat glow effect
-    updateHeartbeatGlow();
+      // Update advanced heartbeat glow effect
+  updateAdvancedHeartbeatGlow();
     
-    // Update all petal layers with individual rotations and offsets
-    const rotationStep = Math.PI * 2 / state.petalCount;
-    petalLayersRef.current.forEach((layer, layerIndex) => {
-      for (var i = 0; i < state.petalCount; i++) {
-        layer[i].rotation.set(0, 0, 0);
-        layer[i].rotateY((rotationStep * i) + (state.layerOffsets[layerIndex] * Math.PI * 2));
-        layer[i].rotateX((Math.PI / 2) * (state.petalRotation + state.layerRotations[layerIndex]));
+      // Update all petal layers with individual rotations, offsets, and open/close animation
+  const rotationStep = Math.PI * 2 / state.petalCount;
+  const t = Date.now() * 0.001;
+  
+  petalLayersRef.current.forEach((layer, layerIndex) => {
+    for (var i = 0; i < state.petalCount; i++) {
+      layer[i].rotation.set(0, 0, 0);
+      layer[i].rotateY((rotationStep * i) + (state.layerOffsets[layerIndex] * Math.PI * 2));
+      
+      // Petal open/close animation
+      let openCloseAngle = 0;
+      if (moodParams?.petalOpenCloseParams) {
+        const openCloseParams = moodParams.petalOpenCloseParams;
+        const openCloseSpeed = openCloseParams.openCloseSpeed || 1;
+        const baseAngle = Math.sin(t * openCloseSpeed) * 0.5 + 0.5; // 0 to 1
+        
+        if (openCloseParams.individualLayerControl && openCloseParams.layerOpenCloseRanges[layerIndex]) {
+          const range = openCloseParams.layerOpenCloseRanges[layerIndex];
+          openCloseAngle = range.min + (baseAngle * (range.max - range.min));
+        } else {
+          openCloseAngle = openCloseParams.minOpenAngle + (baseAngle * (openCloseParams.maxOpenAngle - openCloseParams.minOpenAngle));
+        }
       }
-    });
+      
+      layer[i].rotateX((Math.PI / 2) * (state.petalRotation + state.layerRotations[layerIndex] + openCloseAngle));
+    }
+  });
     
     // Update connector length based on petal positions
     updateConnectorLength();
