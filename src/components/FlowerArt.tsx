@@ -36,6 +36,7 @@ export default function FlowerArt({
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const flowerGroupRef = useRef<THREE.Group | null>(null);
+  const animationIdRef = useRef<number | null>(null);
 
   // Beautiful mood-based color palettes
   const getMoodColors = (mood: number) => {
@@ -241,8 +242,31 @@ export default function FlowerArt({
     }
   };
 
+  // Cleanup function
+  const cleanup = () => {
+    if (animationIdRef.current) {
+      cancelAnimationFrame(animationIdRef.current);
+      animationIdRef.current = null;
+    }
+    
+    if (rendererRef.current) {
+      rendererRef.current.dispose();
+      rendererRef.current = null;
+    }
+    
+    if (containerRef.current) {
+      containerRef.current.innerHTML = '';
+    }
+    
+    sceneRef.current = null;
+    flowerGroupRef.current = null;
+  };
+
   useEffect(() => {
     if (!containerRef.current) return;
+
+    // Clean up any existing renderer
+    cleanup();
 
     // Scene setup
     const scene = new THREE.Scene();
@@ -361,9 +385,8 @@ export default function FlowerArt({
     containerRef.current.appendChild(renderer.domElement);
 
     // Animation loop
-    let animationId: number;
     const animate = () => {
-      animationId = requestAnimationFrame(animate);
+      animationIdRef.current = requestAnimationFrame(animate);
 
       // Rotate flower slowly
       if (flowerGroup) {
@@ -412,15 +435,11 @@ export default function FlowerArt({
       return () => {
         renderer.domElement.removeEventListener('mousemove', handleMouseMove);
         renderer.domElement.removeEventListener('click', handleClick);
-        cancelAnimationFrame(animationId);
-        renderer.dispose();
+        cleanup();
       };
     }
 
-    return () => {
-      cancelAnimationFrame(animationId);
-      renderer.dispose();
-    };
+    return cleanup;
   }, [traits, size, interactive, onMoodChange]);
 
   return (
