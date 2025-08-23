@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { FlowerArtParameters } from '@/services/moodClassifierService';
 
 interface FlowerArtProps {
@@ -62,18 +63,18 @@ export default function FlowerArt({
   
   // Extract parameters from moodParams or use defaults
   const effectiveEmotion = moodParams?.currentEmotion || emotion;
-  const effectivePetalCount = moodParams?.petalParams.petalCount || petalCount;
-  const effectiveLayerCount = moodParams?.petalParams.layerCount || layerCount;
-  const effectiveHeartbeatBPM = moodParams?.heartbeatSettings.bpm || heartbeatBPM;
-  const effectiveHeartbeatIntensity = moodParams?.heartbeatSettings.intensity || heartbeatIntensity;
-  const effectiveRotationSpeed = moodParams?.moodSettings.intensity || rotationSpeed;
-  const effectiveRotationDirection = moodParams?.moodSettings.direction || rotationDirection;
-  const effectiveStalkLength = moodParams?.stalkParams.currentLength || 10;
-  const effectiveBeePosition = moodParams?.beeParams.basePosition || { x: 0, y: 2.1, z: 0 };
-  const effectiveWingSpeed = moodParams?.beeParams.wingSpeed || 18;
-  const effectivePetalRotation = moodParams?.petalParams.petalRotation || 0.1;
-  const effectiveLayerRotations = moodParams?.petalParams.layerRotations || new Array(effectiveLayerCount).fill(0);
-  const effectiveLayerOffsets = moodParams?.petalParams.layerOffsets || new Array(effectiveLayerCount).fill(0);
+  const effectivePetalCount = moodParams?.petalParams?.petalCount || petalCount;
+  const effectiveLayerCount = moodParams?.petalParams?.layerCount || layerCount;
+  const effectiveHeartbeatBPM = moodParams?.heartbeatSettings?.bpm || heartbeatBPM;
+  const effectiveHeartbeatIntensity = moodParams?.heartbeatSettings?.intensity || heartbeatIntensity;
+  const effectiveRotationSpeed = moodParams?.moodSettings?.intensity || rotationSpeed;
+  const effectiveRotationDirection = moodParams?.moodSettings?.direction || rotationDirection;
+  const effectiveStalkLength = moodParams?.stalkParams?.currentLength || 10;
+  const effectiveBeePosition = moodParams?.beeParams?.basePosition || { x: 0, y: 2.1, z: 0 };
+  const effectiveWingSpeed = moodParams?.beeParams?.wingSpeed || 18;
+  const effectivePetalRotation = moodParams?.petalParams?.petalRotation || 0.1;
+  const effectiveLayerRotations = moodParams?.petalParams?.layerRotations || new Array(effectiveLayerCount).fill(0);
+  const effectiveLayerOffsets = moodParams?.petalParams?.layerOffsets || new Array(effectiveLayerCount).fill(0);
 
   // Flower state
   const flowerStateRef = useRef({
@@ -753,9 +754,21 @@ export default function FlowerArt({
 
     containerRef.current.appendChild(renderer.domElement);
 
+    // Controls
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, 0, 0);
+    controls.update();
+
     // Initialize flower
     calculateMoodRotation();
     generateFlower();
+    
+    // Debug: Check if flower was created
+    console.log('Flower generated:', {
+      petalLayers: petalLayersRef.current.length,
+      sceneChildren: scene.children.length,
+      state: flowerStateRef.current
+    });
 
     // Animation loop
     const animate = () => {
