@@ -26,7 +26,7 @@ export default function FlowerTypingEffect({ text, className = "" }: FlowerTypin
     textInputEl.style.fontSize = textureFontSize + 'px';
     textInputEl.style.font = '100 ' + textureFontSize + 'px ' + fontName;
     textInputEl.style.lineHeight = 1.1 * textureFontSize + 'px';
-    textInputEl.innerHTML = text;
+    textInputEl.innerHTML = ''; // Start empty for typing animation
 
     // 3D scene related globals
     let scene: THREE.Scene;
@@ -193,11 +193,25 @@ export default function FlowerTypingEffect({ text, className = "" }: FlowerTypin
 
     // Handle input and update string
     function handleInput() {
+      // Temporarily make text input visible to get proper dimensions
+      textInputEl.style.opacity = '1';
+      textInputEl.style.position = 'absolute';
+      textInputEl.style.top = '0';
+      textInputEl.style.left = '0';
+      textInputEl.style.zIndex = '-1';
+      
+      // Set the full text to measure dimensions
+      textInputEl.innerHTML = text;
+      
       stringBox.wTexture = textInputEl.clientWidth;
       stringBox.wScene = stringBox.wTexture * fontScaleFactor;
       stringBox.hTexture = textInputEl.clientHeight;
       stringBox.hScene = stringBox.hTexture * fontScaleFactor;
       stringBox.caretPosScene = [0, 0]; // Simplified for now
+      
+      // Reset for animation
+      textInputEl.innerHTML = '';
+      textInputEl.style.opacity = '0';
     }
 
     // Sample coordinates from text
