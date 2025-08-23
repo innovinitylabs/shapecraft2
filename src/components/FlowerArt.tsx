@@ -37,90 +37,160 @@ export default function FlowerArt({
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const flowerGroupRef = useRef<THREE.Group | null>(null);
 
-  // Get mood-based colors
+  // Beautiful mood-based color palettes
   const getMoodColors = (mood: number) => {
-    const colors = [
-      { primary: '#2c3e50', secondary: '#34495e', accent: '#7f8c8d' }, // 1 - Dark blue (sad)
-      { primary: '#34495e', secondary: '#5d6d7e', accent: '#85929e' }, // 2 - Gray blue
-      { primary: '#7f8c8d', secondary: '#95a5a6', accent: '#bdc3c7' }, // 3 - Gray
-      { primary: '#95a5a6', secondary: '#bdc3c7', accent: '#d5dbdb' }, // 4 - Light gray
-      { primary: '#bdc3c7', secondary: '#d5dbdb', accent: '#ecf0f1' }, // 5 - Neutral
-      { primary: '#f39c12', secondary: '#f7dc6f', accent: '#f8c471' }, // 6 - Orange
-      { primary: '#e67e22', secondary: '#f8c471', accent: '#f9e79f' }, // 7 - Dark orange
-      { primary: '#e74c3c', secondary: '#ec7063', accent: '#f1948a' }, // 8 - Red
-      { primary: '#c0392b', secondary: '#e74c3c', accent: '#ec7063' }, // 9 - Dark red
-      { primary: '#ff6b6b', secondary: '#ff8e8e', accent: '#ffb3b3' }  // 10 - Bright red (angry)
+    const palettes = [
+      // 1 - Deep sadness (dark purples/blues)
+      { 
+        primary: '#4A148C', 
+        secondary: '#7B1FA2', 
+        accent: '#9C27B0',
+        petal: '#6A1B9A',
+        center: '#3F1B5B'
+      },
+      // 2 - Sadness (blues)
+      { 
+        primary: '#1565C0', 
+        secondary: '#1976D2', 
+        accent: '#2196F3',
+        petal: '#0D47A1',
+        center: '#0D47A1'
+      },
+      // 3 - Melancholy (gray-blues)
+      { 
+        primary: '#546E7A', 
+        secondary: '#607D8B', 
+        accent: '#78909C',
+        petal: '#455A64',
+        center: '#37474F'
+      },
+      // 4 - Disappointment (muted colors)
+      { 
+        primary: '#8D6E63', 
+        secondary: '#A1887F', 
+        accent: '#BCAAA4',
+        petal: '#6D4C41',
+        center: '#5D4037'
+      },
+      // 5 - Neutral (soft greens)
+      { 
+        primary: '#66BB6A', 
+        secondary: '#81C784', 
+        accent: '#A5D6A7',
+        petal: '#4CAF50',
+        center: '#388E3C'
+      },
+      // 6 - Content (warm yellows)
+      { 
+        primary: '#FFB300', 
+        secondary: '#FFC107', 
+        accent: '#FFD54F',
+        petal: '#FF8F00',
+        center: '#F57C00'
+      },
+      // 7 - Happy (bright oranges)
+      { 
+        primary: '#FF7043', 
+        secondary: '#FF8A65', 
+        accent: '#FFAB91',
+        petal: '#FF5722',
+        center: '#E64A19'
+      },
+      // 8 - Excited (vibrant pinks)
+      { 
+        primary: '#E91E63', 
+        secondary: '#F06292', 
+        accent: '#F8BBD9',
+        petal: '#C2185B',
+        center: '#AD1457'
+      },
+      // 9 - Elated (bright reds)
+      { 
+        primary: '#F44336', 
+        secondary: '#EF5350', 
+        accent: '#E57373',
+        petal: '#D32F2F',
+        center: '#C62828'
+      },
+      // 10 - Euphoric (rainbow colors)
+      { 
+        primary: '#FF1744', 
+        secondary: '#FF4081', 
+        accent: '#FF80AB',
+        petal: '#D50000',
+        center: '#B71C1C'
+      }
     ];
     
     const index = Math.floor(mood) - 1;
-    return colors[Math.max(0, Math.min(index, colors.length - 1))];
+    return palettes[Math.max(0, Math.min(index, palettes.length - 1))];
   };
 
-  // Create petal geometry
+  // Create beautiful petal geometry
   const createPetalGeometry = (shape: string) => {
     const geometry = new THREE.BufferGeometry();
     const points = [];
     
     switch (shape) {
       case 'sharp':
-        // Sharp, spiky petals (angry mood)
+        // Sharp, energetic petals (happy/excited mood)
         points.push(
           0, 0, 0,
-          0.2, 0.1, 0,
-          0.4, 0.3, 0,
-          0.6, 0.6, 0,
+          0.3, 0.2, 0,
+          0.6, 0.5, 0,
           0.8, 1.0, 0,
-          0.7, 1.4, 0,
-          0.5, 1.6, 0,
-          0.3, 1.7, 0,
-          0, 1.8, 0,
-          -0.3, 1.7, 0,
-          -0.5, 1.6, 0,
-          -0.7, 1.4, 0,
+          0.9, 1.5, 0,
+          0.8, 2.0, 0,
+          0.6, 2.3, 0,
+          0.4, 2.4, 0,
+          0, 2.5, 0,
+          -0.4, 2.4, 0,
+          -0.6, 2.3, 0,
+          -0.8, 2.0, 0,
+          -0.9, 1.5, 0,
           -0.8, 1.0, 0,
-          -0.6, 0.6, 0,
-          -0.4, 0.3, 0,
-          -0.2, 0.1, 0
+          -0.6, 0.5, 0,
+          -0.3, 0.2, 0
         );
         break;
       case 'drooping':
         // Drooping, sad petals
         points.push(
           0, 0, 0,
-          0.15, -0.1, 0,
-          0.3, -0.2, 0,
-          0.5, -0.1, 0,
-          0.7, 0.2, 0,
-          0.6, 0.6, 0,
-          0.4, 0.8, 0,
-          0.2, 0.9, 0,
-          0, 0.8, 0,
-          -0.2, 0.9, 0,
-          -0.4, 0.8, 0,
-          -0.6, 0.6, 0,
-          -0.7, 0.2, 0,
-          -0.5, -0.1, 0,
-          -0.3, -0.2, 0,
-          -0.15, -0.1, 0
+          0.2, -0.1, 0,
+          0.4, -0.2, 0,
+          0.6, -0.1, 0,
+          0.7, 0.3, 0,
+          0.6, 0.8, 0,
+          0.4, 1.2, 0,
+          0.2, 1.4, 0,
+          0, 1.5, 0,
+          -0.2, 1.4, 0,
+          -0.4, 1.2, 0,
+          -0.6, 0.8, 0,
+          -0.7, 0.3, 0,
+          -0.6, -0.1, 0,
+          -0.4, -0.2, 0,
+          -0.2, -0.1, 0
         );
         break;
       default:
-        // Rounded, calm petals
+        // Rounded, peaceful petals
         points.push(
           0, 0, 0,
-          0.25, 0.2, 0,
-          0.5, 0.5, 0,
-          0.7, 0.9, 0,
-          0.6, 1.3, 0,
-          0.4, 1.5, 0,
-          0.2, 1.6, 0,
-          0, 1.7, 0,
-          -0.2, 1.6, 0,
-          -0.4, 1.5, 0,
-          -0.6, 1.3, 0,
-          -0.7, 0.9, 0,
-          -0.5, 0.5, 0,
-          -0.25, 0.2, 0
+          0.4, 0.3, 0,
+          0.7, 0.8, 0,
+          0.9, 1.4, 0,
+          0.8, 2.0, 0,
+          0.6, 2.4, 0,
+          0.3, 2.6, 0,
+          0, 2.7, 0,
+          -0.3, 2.6, 0,
+          -0.6, 2.4, 0,
+          -0.8, 2.0, 0,
+          -0.9, 1.4, 0,
+          -0.7, 0.8, 0,
+          -0.4, 0.3, 0
         );
     }
     
@@ -199,8 +269,8 @@ export default function FlowerArt({
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     rendererRef.current = renderer;
 
-    // Lighting
-    const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+    // Beautiful lighting setup
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
     scene.add(ambientLight);
 
     const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
@@ -216,53 +286,56 @@ export default function FlowerArt({
     const flowerGroup = new THREE.Group();
     flowerGroupRef.current = flowerGroup;
 
-    // Get colors based on mood
+    // Get beautiful colors based on mood
     const colors = getMoodColors(traits.mood);
 
-    // Create flower center
+    // Create flower center with beautiful material
     const centerGeometry = createCenterGeometry(traits.coreShape);
     const centerMaterial = new THREE.MeshPhongMaterial({
-      color: colors.primary,
+      color: colors.center,
       emissive: colors.primary,
-      emissiveIntensity: traits.glowIntensity * 0.3,
-      shininess: 100
+      emissiveIntensity: traits.glowIntensity * 0.2,
+      shininess: 100,
+      transparent: true,
+      opacity: 0.9
     });
     const center = new THREE.Mesh(centerGeometry, centerMaterial);
     flowerGroup.add(center);
 
-    // Create petals
+    // Create beautiful petals
     for (let i = 0; i < traits.petalCount; i++) {
       const petalGeometry = createPetalGeometry(traits.petalShape);
       const petalMaterial = new THREE.MeshPhongMaterial({
-        color: colors.secondary,
+        color: colors.petal,
+        emissive: colors.secondary,
+        emissiveIntensity: traits.glowIntensity * 0.1,
         transparent: true,
-        opacity: 0.9,
-        emissive: colors.accent,
-        emissiveIntensity: traits.glowIntensity * 0.2
+        opacity: 0.95,
+        shininess: 50
       });
       const petal = new THREE.Mesh(petalGeometry, petalMaterial);
       
       const angle = (i / traits.petalCount) * Math.PI * 2;
-      const radius = 1.2 + (i % 2) * 0.3;
+      const radius = 1.2 + (i % 2) * 0.2;
       petal.position.set(
         Math.cos(angle) * radius,
         Math.sin(angle) * radius,
         0
       );
       petal.rotation.z = angle;
-      petal.scale.setScalar(0.8 + (traits.mood / 10) * 0.4);
+      petal.scale.setScalar(0.8 + (traits.mood / 10) * 0.3);
       flowerGroup.add(petal);
     }
 
-    // Create ring layers
+    // Create beautiful ring layers
     for (let i = 0; i < traits.ringCount; i++) {
-      const ringGeometry = new THREE.RingGeometry(1.5 + i * 0.3, 1.8 + i * 0.3, 32);
+      const ringGeometry = new THREE.RingGeometry(1.8 + i * 0.2, 2.0 + i * 0.2, 32);
       const ringMaterial = new THREE.MeshPhongMaterial({
         color: colors.accent,
         transparent: true,
-        opacity: 0.3 - (i * 0.1),
+        opacity: 0.4 - (i * 0.1),
         emissive: colors.accent,
-        emissiveIntensity: traits.glowIntensity * (0.4 - i * 0.1)
+        emissiveIntensity: traits.glowIntensity * (0.3 - i * 0.05)
       });
       const ring = new THREE.Mesh(ringGeometry, ringMaterial);
       ring.rotation.z = (i * Math.PI) / traits.ringCount;
@@ -271,13 +344,13 @@ export default function FlowerArt({
 
     // Create collective mood aura
     const auraColors = getMoodColors(traits.collectiveMood);
-    const auraGeometry = new THREE.SphereGeometry(2.5, 32, 32);
+    const auraGeometry = new THREE.SphereGeometry(2.8, 32, 32);
     const auraMaterial = new THREE.MeshPhongMaterial({
       color: auraColors.primary,
       transparent: true,
-      opacity: 0.1,
+      opacity: 0.15,
       emissive: auraColors.primary,
-      emissiveIntensity: traits.glowIntensity * 0.1
+      emissiveIntensity: traits.glowIntensity * 0.05
     });
     const aura = new THREE.Mesh(auraGeometry, auraMaterial);
     flowerGroup.add(aura);
@@ -294,17 +367,17 @@ export default function FlowerArt({
 
       // Rotate flower slowly
       if (flowerGroup) {
-        flowerGroup.rotation.z += 0.005;
+        flowerGroup.rotation.z += 0.003;
         
         // Breathing animation based on trading activity
-        const breathingScale = 1 + Math.sin(Date.now() * 0.001 * (1 + traits.tradingActivity)) * 0.1;
+        const breathingScale = 1 + Math.sin(Date.now() * 0.001 * (1 + traits.tradingActivity)) * 0.05;
         flowerGroup.scale.setScalar(breathingScale);
         
         // Mood-based pulsing
         flowerGroup.children.forEach((child, index) => {
           if (child instanceof THREE.Mesh) {
-            const pulse = Math.sin(Date.now() * 0.002 + index * 0.5) * 0.1;
-            child.material.emissiveIntensity = traits.glowIntensity * (0.3 + pulse);
+            const pulse = Math.sin(Date.now() * 0.002 + index * 0.3) * 0.05;
+            child.material.emissiveIntensity = traits.glowIntensity * (0.2 + pulse);
           }
         });
       }
@@ -321,8 +394,8 @@ export default function FlowerArt({
         const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
         
         if (flowerGroup) {
-          flowerGroup.rotation.x = y * 0.3;
-          flowerGroup.rotation.y = x * 0.3;
+          flowerGroup.rotation.x = y * 0.2;
+          flowerGroup.rotation.y = x * 0.2;
         }
       };
 
