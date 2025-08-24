@@ -1,6 +1,6 @@
 'use client';
 
-import { useAccount, useContractRead, useContractWrite, useWaitForTransaction, useBalance } from 'wagmi';
+import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useBalance } from 'wagmi';
 import { 
   contractConfig, 
   EMOTION_CODES, 
@@ -41,72 +41,69 @@ export const useShapeL2FlowerContract = () => {
   });
 
   // Get current mint price
-  const { data: currentMintPrice } = useContractRead({
+  const { data: currentMintPrice } = useReadContract({
     ...contractConfig,
     functionName: 'getCurrentMintPrice',
   });
 
   // Get user's mood history
-  const { data: userMoodHistory, refetch: refetchMoodHistory } = useContractRead({
+  const { data: userMoodHistory, refetch: refetchMoodHistory } = useReadContract({
     ...contractConfig,
     functionName: 'getUserMoodHistory',
     args: address ? [address] : undefined,
-    enabled: !!address,
+    query: {
+      enabled: !!address,
+    },
   });
 
   // Get user's ranking
-  const { data: userRanking, refetch: refetchUserRanking } = useContractRead({
+  const { data: userRanking, refetch: refetchUserRanking } = useReadContract({
     ...contractConfig,
     functionName: 'getUserRanking',
     args: address ? [address] : undefined,
-    enabled: !!address,
+    query: {
+      enabled: !!address,
+    },
   });
 
   // Get user's streak features
-  const { data: streakFeatures, refetch: refetchStreakFeatures } = useContractRead({
+  const { data: streakFeatures, refetch: refetchStreakFeatures } = useReadContract({
     ...contractConfig,
     functionName: 'getStreakFeatures',
     args: address ? [address] : undefined,
-    enabled: !!address,
+    query: {
+      enabled: !!address,
+    },
   });
 
   // Get community stats
-  const { data: communityStats, refetch: refetchCommunityStats } = useContractRead({
+  const { data: communityStats, refetch: refetchCommunityStats } = useReadContract({
     ...contractConfig,
     functionName: 'getCommunityStats',
   });
 
   // Mint flower function
-  const { write: mintFlower, data: mintData } = useContractWrite({
-    ...contractConfig,
-    functionName: 'mintFlowerNFT',
-  });
-
-  // Wait for mint transaction
-  const { isLoading: isMinting, isSuccess: isMintSuccess } = useWaitForTransaction({
-    hash: mintData?.hash,
-  });
+  const { writeContract: mintFlower, data: mintData, isPending: isMinting } = useWriteContract();
 
   // Record mood function
-  const { write: recordMood, data: recordData } = useContractWrite({
-    ...contractConfig,
-    functionName: 'recordMood',
+  const { writeContract: recordMood, data: recordData, isPending: isRecording } = useWriteContract();
+
+  // Claim gasback function
+  const { writeContract: claimGasback, data: claimData, isPending: isClaiming } = useWriteContract();
+
+  // Wait for mint transaction
+  const { isLoading: isMintLoading, isSuccess: isMintSuccess } = useWaitForTransactionReceipt({
+    hash: mintData,
   });
 
   // Wait for record mood transaction
-  const { isLoading: isRecording, isSuccess: isRecordSuccess } = useWaitForTransaction({
-    hash: recordData?.hash,
-  });
-
-  // Claim gasback function
-  const { write: claimGasback, data: claimData } = useContractWrite({
-    ...contractConfig,
-    functionName: 'claimGasback',
+  const { isLoading: isRecordLoading, isSuccess: isRecordSuccess } = useWaitForTransactionReceipt({
+    hash: recordData,
   });
 
   // Wait for claim transaction
-  const { isLoading: isClaiming, isSuccess: isClaimSuccess } = useWaitForTransaction({
-    hash: claimData?.hash,
+  const { isLoading: isClaimLoading, isSuccess: isClaimSuccess } = useWaitForTransactionReceipt({
+    hash: claimData,
   });
 
   // Mint a new flower NFT
@@ -135,6 +132,8 @@ export const useShapeL2FlowerContract = () => {
       }
 
       mintFlower({
+        ...contractConfig,
+        functionName: 'mintFlowerNFT',
         args: [
           emotionCode,
           confidenceValue,
@@ -172,6 +171,8 @@ export const useShapeL2FlowerContract = () => {
       }
 
       recordMood({
+        ...contractConfig,
+        functionName: 'recordMood',
         args: [
           emotionCode,
           confidenceValue,
@@ -199,7 +200,10 @@ export const useShapeL2FlowerContract = () => {
     setError(null);
 
     try {
-      claimGasback();
+      claimGasback({
+        ...contractConfig,
+        functionName: 'claimGasback',
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to claim gasback');
     } finally {
@@ -222,7 +226,7 @@ export const useShapeL2FlowerContract = () => {
   const canRecordMood = (): boolean => {
     if (!userMoodHistory) return true;
     
-    const lastEntry = userMoodHistory.entries[userMoodHistory.entries.length - 1];
+    const lastEntry = userMoodHistory[0]?.[userMoodHistory[0].length - 1];
     if (!lastEntry) return true;
 
     const lastEntryTime = Number(lastEntry.ts);
@@ -237,7 +241,7 @@ export const useShapeL2FlowerContract = () => {
   const getTimeUntilNextMood = (): string => {
     if (!userMoodHistory) return '0 hours';
 
-    const lastEntry = userMoodHistory.entries[userMoodHistory.entries.length - 1];
+    const lastEntry = userMoodHistory[0]?.[userMoodHistory[0].length - 1];
     if (!lastEntry) return '0 hours';
 
     const lastEntryTime = Number(lastEntry.ts);
@@ -268,11 +272,11 @@ export const useShapeL2FlowerContract = () => {
     communityStats,
 
     // Transaction states
-    isMinting,
+    isMinting: isMinting || isMintLoading,
     isMintSuccess,
-    isRecording,
+    isRecording: isRecording || isRecordLoading,
     isRecordSuccess,
-    isClaiming,
+    isClaiming: isClaiming || isClaimLoading,
     isClaimSuccess,
 
     // Functions
