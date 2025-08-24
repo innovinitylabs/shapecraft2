@@ -3,15 +3,8 @@
 // ========================================
 
 export interface FlowerArtParameters {
-  // Core ML parameters for smart contract
-  emotion: string;
-  confidence: number;
-  probabilities: number[];
-  entropy: number;
-  gap: number;
-  
-  // Legacy properties for backward compatibility
   currentEmotion: string;
+  confidence: number;
   confidencePercentage: number;
   mlParams?: {
     emotionProbabilities: Record<string, number>;

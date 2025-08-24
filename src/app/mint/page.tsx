@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Flower, Sparkles, Heart, Zap } from 'lucide-react';
+import { Flower, Sparkles, Heart, Zap, Code, Eye, EyeOff } from 'lucide-react';
 import MoodInput from '@/components/MoodInput';
 import FlowerArt from '@/components/FlowerArt';
 import { FlowerArtParameters } from '@/services/moodClassifierService';
@@ -11,6 +11,7 @@ export default function MintPage() {
   const [moodParams, setMoodParams] = useState<FlowerArtParameters | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [mintStep, setMintStep] = useState<'input' | 'preview' | 'mint'>('input');
+  const [showRawData, setShowRawData] = useState(false);
 
   const handleMoodAnalyzed = (params: FlowerArtParameters) => {
     setMoodParams(params);
@@ -34,10 +35,8 @@ export default function MintPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 relative overflow-hidden">
-
       {/* Background Effects */}
       <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.05%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%222%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-30" />
-
       
       {/* Header */}
       <div className="relative z-10 pt-8 pb-4">
@@ -116,11 +115,78 @@ export default function MintPage() {
                       </div>
                     </div>
 
+                    {/* Core ML Classifier Output */}
+                    <div className="bg-green-900/20 backdrop-blur-sm rounded-2xl p-6 border border-green-500/30">
+                      <h3 className="text-xl font-semibold text-green-300 mb-4 flex items-center">
+                        <span className="bg-green-500 text-white px-2 py-1 rounded text-xs mr-2">ML</span>
+                        Core Classifier Output
+                      </h3>
+                      
+                      <div className="space-y-6 text-xs">
+                        {/* Basic Classifier Info */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                          <div className="bg-green-900/30 rounded p-2">
+                            <p className="text-green-300/60">Predicted Emotion</p>
+                            <p className="text-green-200 font-mono capitalize">{moodParams.currentEmotion}</p>
+                          </div>
+                          <div className="bg-green-900/30 rounded p-2">
+                            <p className="text-green-300/60">Confidence</p>
+                            <p className="text-green-200 font-mono">{moodParams.confidence.toFixed(4)}</p>
+                          </div>
+                          <div className="bg-green-900/30 rounded p-2">
+                            <p className="text-green-300/60">Confidence %</p>
+                            <p className="text-green-200 font-mono">{moodParams.confidencePercentage.toFixed(1)}%</p>
+                          </div>
+                          <div className="bg-green-900/30 rounded p-2">
+                            <p className="text-green-300/60">Second Emotion</p>
+                            <p className="text-green-200 font-mono capitalize">{moodParams.mlParams?.secondEmotion || 'N/A'}</p>
+                          </div>
+                        </div>
+
+                        {/* Emotion Probabilities */}
+                        <div className="bg-green-900/20 rounded p-3">
+                          <h4 className="text-green-300 font-semibold mb-2">Emotion Probabilities (Raw ML Output)</h4>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                            {moodParams.mlParams?.emotionProbabilities && Object.entries(moodParams.mlParams.emotionProbabilities).map(([emotion, probability]) => (
+                              <div key={emotion} className={`${emotion === moodParams.currentEmotion ? 'bg-green-700/30 border border-green-500/50' : 'bg-green-900/30'} rounded p-2`}>
+                                <span className="text-green-300/60 capitalize">{emotion}:</span>
+                                <span className="text-green-200 font-mono ml-1">{((probability as number) * 100).toFixed(1)}%</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* ML Metadata */}
+                        <div className="bg-green-900/20 rounded p-3">
+                          <h4 className="text-green-300 font-semibold mb-2">ML Model Metadata</h4>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                            <div><span className="text-green-300/60">Second Confidence:</span> <span className="text-green-200 font-mono">{((moodParams.mlParams?.secondConfidence || 0) * 100).toFixed(1)}%</span></div>
+                            <div><span className="text-green-300/60">Confidence Gap:</span> <span className="text-green-200 font-mono">{(moodParams.mlParams?.confidenceGap || 0).toFixed(4)}</span></div>
+                            <div><span className="text-green-300/60">Complexity Entropy:</span> <span className="text-green-200 font-mono">{(moodParams.mlParams?.complexityEntropy || 0).toFixed(4)}</span></div>
+                            <div><span className="text-green-300/60">Intensity Multiplier:</span> <span className="text-green-200 font-mono">{moodParams.mlParams?.intensityMultiplier || 1}</span></div>
+                          </div>
+                        </div>
+
+                        {/* Sorted Emotions */}
+                        <div className="bg-green-900/20 rounded p-3">
+                          <h4 className="text-green-300 font-semibold mb-2">Sorted Emotions (Top 5)</h4>
+                          <div className="space-y-1">
+                            {moodParams.mlParams?.sortedEmotions?.slice(0, 5).map(([emotion, probability], index) => (
+                              <div key={emotion} className={`flex justify-between items-center p-2 rounded ${index === 0 ? 'bg-green-700/30 border border-green-500/50' : 'bg-green-900/30'}`}>
+                                <span className="text-green-200 font-mono capitalize">{emotion}</span>
+                                <span className="text-green-200 font-mono">{(probability * 100).toFixed(1)}%</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                     {/* Dev Container - All Mood Classifier Values */}
                     <div className="bg-red-900/20 backdrop-blur-sm rounded-2xl p-6 border border-red-500/30">
                       <h3 className="text-xl font-semibold text-red-300 mb-4 flex items-center">
                         <span className="bg-red-500 text-white px-2 py-1 rounded text-xs mr-2">DEV</span>
-                        Mood Classifier Parameters
+                        Generated Parameters (API Wrapper)
                       </h3>
                       
                       <div className="space-y-6 text-xs">
@@ -234,6 +300,74 @@ export default function MintPage() {
                       </div>
                     </div>
 
+                    {/* Raw API Data Display */}
+                    <div className="bg-blue-900/20 backdrop-blur-sm rounded-2xl p-6 border border-blue-500/30">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-xl font-semibold text-blue-300 flex items-center">
+                          <span className="bg-blue-500 text-white px-2 py-1 rounded text-xs mr-2">API</span>
+                          <Code className="mr-2" size={20} />
+                          Raw API Response Data
+                        </h3>
+                        <button
+                          onClick={() => setShowRawData(!showRawData)}
+                          className="flex items-center space-x-2 px-3 py-1 bg-blue-500/20 hover:bg-blue-500/30 text-blue-200 rounded-lg transition-colors text-sm"
+                        >
+                          {showRawData ? <EyeOff size={16} /> : <Eye size={16} />}
+                          <span>{showRawData ? 'Hide' : 'Show'} Raw Data</span>
+                        </button>
+                      </div>
+                      
+                      <AnimatePresence>
+                        {showRawData && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="bg-blue-950/50 rounded-lg p-4 border border-blue-500/20">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-blue-300 text-sm font-medium">API Response JSON</span>
+                                <button
+                                  onClick={() => navigator.clipboard.writeText(JSON.stringify(moodParams, null, 2))}
+                                  className="text-blue-400 hover:text-blue-300 text-xs px-2 py-1 bg-blue-500/20 rounded transition-colors"
+                                >
+                                  Copy JSON
+                                </button>
+                              </div>
+                              <pre className="text-blue-200 text-xs overflow-x-auto whitespace-pre-wrap font-mono bg-blue-950/30 p-3 rounded border border-blue-500/10 max-h-96 overflow-y-auto">
+                                {JSON.stringify(moodParams, null, 2)}
+                              </pre>
+                            </div>
+                            
+                            {/* API Request Info */}
+                            <div className="mt-4 bg-blue-950/30 rounded-lg p-3 border border-blue-500/20">
+                              <h4 className="text-blue-300 font-medium mb-2 text-sm">API Request Information</h4>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                                <div>
+                                  <span className="text-blue-400">Endpoint:</span>
+                                  <span className="text-blue-200 font-mono ml-2">POST /api/mood-analysis</span>
+                                </div>
+                                <div>
+                                  <span className="text-blue-400">Base URL:</span>
+                                  <span className="text-blue-200 font-mono ml-2">{process.env.NEXT_PUBLIC_MOOD_CLASSIFIER_API_URL || 'https://shapes-of-mood.up.railway.app'}</span>
+                                </div>
+                                <div>
+                                  <span className="text-blue-400">Response Time:</span>
+                                  <span className="text-blue-200 font-mono ml-2">~2-3 seconds</span>
+                                </div>
+                                <div>
+                                  <span className="text-blue-400">Data Size:</span>
+                                  <span className="text-blue-200 font-mono ml-2">{(JSON.stringify(moodParams).length / 1024).toFixed(1)} KB</span>
+                                </div>
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
                     {/* Action Buttons */}
                     <div className="flex space-x-4">
                       <button
@@ -280,7 +414,7 @@ export default function MintPage() {
             <div className="relative h-[800px] bg-black rounded-xl overflow-hidden flex items-center justify-center">
               {moodParams ? (
                 <FlowerArt
-                  parameters={moodParams}
+                  moodParams={moodParams}
                   size={800}
                   className=""
                 />

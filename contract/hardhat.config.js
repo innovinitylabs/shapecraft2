@@ -1,4 +1,3 @@
-require('dotenv').config();
 require("@nomicfoundation/hardhat-toolbox");
 require("hardhat-gas-reporter");
 require("solidity-coverage");
@@ -16,12 +15,19 @@ module.exports = {
     },
   },
   networks: {
-    // Shape Sepolia (Alchemy)
-    "shape-sepolia": {
-      url: `https://shape-sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_KEY || process.env.NEXT_PUBLIC_ALCHEMY_KEY || ''}`,
+    // Shape L2 Testnet
+    "shape-l2-testnet": {
+      url: "https://testnet-rpc.shape-l2.com", // Replace with actual Shape L2 testnet RPC
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      chainId: 11011,
-      gasPrice: 1000000000,
+      chainId: 1234, // Replace with actual Shape L2 testnet chain ID
+      gasPrice: 1000000000, // 1 gwei
+    },
+    // Shape L2 Mainnet
+    "shape-l2-mainnet": {
+      url: "https://rpc.shape-l2.com", // Replace with actual Shape L2 mainnet RPC
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      chainId: 5678, // Replace with actual Shape L2 mainnet chain ID
+      gasPrice: 1000000000, // 1 gwei
     },
     // Local development
     hardhat: {
@@ -40,15 +46,24 @@ module.exports = {
   },
   etherscan: {
     apiKey: {
-      "shape-sepolia": process.env.SHAPE_L2_API_KEY || "",
+      "shape-l2-mainnet": process.env.SHAPE_L2_API_KEY || "",
+      "shape-l2-testnet": process.env.SHAPE_L2_API_KEY || "",
     },
     customChains: [
       {
-        network: "shape-sepolia",
-        chainId: 11011,
+        network: "shape-l2-mainnet",
+        chainId: 5678, // Replace with actual chain ID
         urls: {
-          apiURL: "https://explorer-sepolia.shape.network/api",
-          browserURL: "https://explorer-sepolia.shape.network",
+          apiURL: "https://explorer.shape-l2.com/api", // Replace with actual explorer API
+          browserURL: "https://explorer.shape-l2.com", // Replace with actual explorer URL
+        },
+      },
+      {
+        network: "shape-l2-testnet",
+        chainId: 1234, // Replace with actual chain ID
+        urls: {
+          apiURL: "https://testnet-explorer.shape-l2.com/api", // Replace with actual testnet explorer API
+          browserURL: "https://testnet-explorer.shape-l2.com", // Replace with actual testnet explorer URL
         },
       },
     ],
