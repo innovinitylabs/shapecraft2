@@ -2,12 +2,13 @@
 
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { FlowerArtParameters } from '@/services/moodClassifierService';
 
 interface FlowerArtProps {
   // Full mood classifier parameters
-  moodParams?: FlowerArtParameters;
+  parameters?: FlowerArtParameters;
+  moodParams?: FlowerArtParameters; // Legacy prop name
   
   // Individual parameters for backward compatibility
   emotion?: string;
@@ -43,6 +44,7 @@ export function generateFlowerTraits(index: number) {
 }
 
 export default function FlowerArt({ 
+  parameters,
   moodParams,
   emotion = 'neutral',
   petalCount = 6,
@@ -64,20 +66,23 @@ export default function FlowerArt({
   const controlsRef = useRef<OrbitControls | null>(null);
   const animationIdRef = useRef<number | null>(null);
   
-  // Extract parameters from moodParams or use defaults
-  const effectiveEmotion = moodParams?.currentEmotion || emotion;
-  const effectivePetalCount = moodParams?.petalParams?.petalCount || petalCount;
-  const effectiveLayerCount = moodParams?.petalParams?.layerCount || layerCount;
-  const effectiveHeartbeatBPM = moodParams?.heartbeatSettings?.bpm || heartbeatBPM;
-  const effectiveHeartbeatIntensity = moodParams?.heartbeatSettings?.intensity || heartbeatIntensity;
-  const effectiveRotationSpeed = moodParams?.moodSettings?.intensity || rotationSpeed;
-  const effectiveRotationDirection = moodParams?.moodSettings?.direction || rotationDirection;
-  const effectiveStalkLength = moodParams?.stalkParams?.currentLength || 10;
-  const effectiveBeePosition = moodParams?.beeParams?.basePosition || { x: 0, y: 2.1, z: 0 };
-  const effectiveWingSpeed = moodParams?.beeParams?.wingSpeed || 18;
-  const effectivePetalRotation = moodParams?.petalParams?.petalRotation || 0.1;
-  const effectiveLayerRotations = moodParams?.petalParams?.layerRotations || new Array(effectiveLayerCount).fill(0);
-  const effectiveLayerOffsets = moodParams?.petalParams?.layerOffsets || new Array(effectiveLayerCount).fill(0);
+  // Use parameters first, then fallback to moodParams for backward compatibility
+  const moodData = parameters || moodParams;
+  
+  // Extract parameters from moodData or use defaults
+  const effectiveEmotion = moodData?.currentEmotion || emotion;
+  const effectivePetalCount = moodData?.petalParams?.petalCount || petalCount;
+  const effectiveLayerCount = moodData?.petalParams?.layerCount || layerCount;
+  const effectiveHeartbeatBPM = moodData?.heartbeatSettings?.bpm || heartbeatBPM;
+  const effectiveHeartbeatIntensity = moodData?.heartbeatSettings?.intensity || heartbeatIntensity;
+  const effectiveRotationSpeed = moodData?.moodSettings?.intensity || rotationSpeed;
+  const effectiveRotationDirection = moodData?.moodSettings?.direction || rotationDirection;
+  const effectiveStalkLength = moodData?.stalkParams?.currentLength || 10;
+  const effectiveBeePosition = moodData?.beeParams?.basePosition || { x: 0, y: 2.1, z: 0 };
+  const effectiveWingSpeed = moodData?.beeParams?.wingSpeed || 18;
+  const effectivePetalRotation = moodData?.petalParams?.petalRotation || 0.1;
+  const effectiveLayerRotations = moodData?.petalParams?.layerRotations || new Array(effectiveLayerCount).fill(0);
+  const effectiveLayerOffsets = moodData?.petalParams?.layerOffsets || new Array(effectiveLayerCount).fill(0);
 
   // Flower state
   const flowerStateRef = useRef({
@@ -155,7 +160,7 @@ export default function FlowerArt({
   // Update advanced mood rotation with alternating and individual control
   const updateAdvancedMoodRotation = () => {
     const state = flowerStateRef.current;
-    const rotationParams = moodParams?.rotationParams;
+    const rotationParams = moodData?.rotationParams;
     
     if (!rotationParams) {
       // Fallback to basic rotation with default animation
@@ -237,7 +242,7 @@ export default function FlowerArt({
     const heartbeatPhase = (t % heartbeatPeriod) / heartbeatPeriod;
     
     // Advanced heartbeat parameters
-    const heartbeatParams = moodParams?.heartbeatParams;
+    const heartbeatParams = moodData?.heartbeatParams;
     const pulseUpdateRate = heartbeatParams?.pulseUpdateRate || 1;
     const dualPulseEnabled = heartbeatParams?.dualPulseEnabled || false;
     const secondaryPulseIntensity = heartbeatParams?.secondaryPulseIntensity || 0.3;
@@ -715,7 +720,7 @@ export default function FlowerArt({
     updateAdvancedMoodRotation();
     
     // Update heartbeat glow effect (with fallback)
-    if (moodParams?.heartbeatParams) {
+    if (moodData?.heartbeatParams) {
       updateAdvancedHeartbeatGlow();
     } else {
       updateFallbackHeartbeat();
@@ -743,8 +748,8 @@ export default function FlowerArt({
         
         // Petal open/close animation
         let openCloseAngle = 0;
-        if (moodParams?.petalOpenCloseParams) {
-          const openCloseParams = moodParams.petalOpenCloseParams;
+        if (moodData?.petalOpenCloseParams) {
+          const openCloseParams = moodData.petalOpenCloseParams;
           const openCloseSpeed = openCloseParams.openCloseSpeed || 1;
           const baseAngle = Math.sin(t * openCloseSpeed) * 0.5 + 0.5; // 0 to 1
           
@@ -920,7 +925,7 @@ export default function FlowerArt({
       }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [moodParams, emotion, petalCount, layerCount, heartbeatBPM, heartbeatIntensity, rotationSpeed, rotationDirection, size]);
+  }, [parameters, moodParams, emotion, petalCount, layerCount, heartbeatBPM, heartbeatIntensity, rotationSpeed, rotationDirection, size]);
 
   return (
     <div 
