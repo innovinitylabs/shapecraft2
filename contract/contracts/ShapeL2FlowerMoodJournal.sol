@@ -8,108 +8,96 @@ import "@openzeppelin/contracts/utils/Base64.sol";
 
 /**
  * @title ShapeL2FlowerMoodJournal
- * @dev Complete flower NFT contract with dynamic rarity, community features, and optimized gas usage
- * @dev Deployed on Shape L2 with 80% gasback and unlimited contract size
+ * @dev Optimized flower NFT contract for Shape L2
  */
 contract ShapeL2FlowerMoodJournal is ERC721, Ownable, Pausable {
     
     // ============ OPTIMIZED DATA STRUCTURES ============
     
-    // Emotion codes: 0=happy, 1=joy, 2=sad, 3=fear, 4=anger, 5=disgust, 6=shame, 7=surprise, 8=neutral
     struct MoodEntry {
-        uint32 ts;           // timestamp (4 bytes)
-        uint16 conf;         // confidence (2 bytes)
-        uint8 emotion;       // emotion code (1 byte)
-        uint8 entropy;       // complexity entropy (1 byte)
-        uint8 gap;           // confidence gap (1 byte)
-        uint8[5] probs;      // emotion probabilities (5 bytes)
-        // Total: 14 bytes vs 32+ bytes for string version
+        uint32 ts;           // timestamp
+        uint16 conf;         // confidence
+        uint8 emotion;       // emotion code
+        uint8 entropy;       // complexity entropy
+        uint8 gap;           // confidence gap
+        uint8[5] probs;      // emotion probabilities
     }
     
     struct UserHistory {
         MoodEntry[] entries;
-        uint32 lastDate;     // last entry date (4 bytes)
-        uint16 dailyCount;   // daily entries count (2 bytes)
-        uint16 total;        // total entries (2 bytes)
-        uint16 streak;       // current streak (2 bytes)
-        uint16 maxStreak;    // max streak (2 bytes)
-        uint16 nftId;        // NFT token ID (2 bytes)
-        // Total: 14 bytes + entries array
+        uint32 lastDate;
+        uint16 dailyCount;
+        uint16 total;
+        uint16 streak;
+        uint16 maxStreak;
+        uint16 nftId;
     }
     
     struct CommStats {
-        uint128 totalScore;  // total mood score (16 bytes)
-        uint64 participants; // participant count (8 bytes)
-        uint64 lastUpdate;   // last update time (8 bytes)
-        uint128 avgMood;     // average mood (16 bytes)
-        // Total: 48 bytes
+        uint128 totalScore;
+        uint64 participants;
+        uint64 lastUpdate;
+        uint128 avgMood;
     }
     
     struct Pricing {
-        uint128 currentPrice;    // current mint price (16 bytes)
-        uint64 lastMint;         // last mint time (8 bytes)
-        uint64 totalMinted;      // total minted (8 bytes)
-        uint128 basePrice;       // base price (16 bytes)
-        uint128 introPrice;      // introductory price (16 bytes)
-        // Total: 64 bytes
+        uint128 currentPrice;
+        uint64 lastMint;
+        uint64 totalMinted;
+        uint128 basePrice;
+        uint128 introPrice;
     }
     
     struct UserRanking {
-        uint256 totalMoodScore;    // Cumulative mood score
-        uint256 averageMoodScore;  // Average mood score
-        uint256 streakCount;       // Total streaks achieved
-        uint256 maxStreak;         // Longest streak
-        uint256 totalEntries;      // Total mood entries
-        uint256 lastUpdateTime;    // Last update timestamp
-        uint256 rank;              // Current rank (1 = highest)
+        uint256 totalMoodScore;
+        uint256 averageMoodScore;
+        uint256 streakCount;
+        uint256 maxStreak;
+        uint256 totalEntries;
+        uint256 lastUpdateTime;
+        uint256 rank;
     }
     
     struct ArtVersion {
-        string version;           // "1.0.0"
-        string htmlArt;           // HTML art file content (84KB, can be optimized)
-        string artAssets;         // Art assets (images, sounds) as base64 or compressed
+        string version;
+        string htmlArt;
+        string artAssets;
         uint256 timestamp;
         bool active;
     }
     
     struct ArtFeatures {
-        bool beeEnabled;          // Bee animation feature
-        bool soundEnabled;        // Sound effects
-        bool particleEffects;     // Particle animations
-        bool advancedLighting;    // Advanced lighting effects
-        bool weatherEffects;      // Weather/seasonal effects
-        bool timeOfDay;           // Day/night cycle
-        bool communityInfluence;  // Community mood affects art
-        bool tradingActivity;     // Trading volume affects art
-        uint256 artComplexity;    // Art complexity level (1-10)
-        uint256 animationSpeed;   // Animation speed multiplier
-        uint256 colorPalette;     // Color palette variation
-        uint256 specialEffects;   // Special effects level
+        bool beeEnabled;
+        bool soundEnabled;
+        bool particleEffects;
+        bool advancedLighting;
+        bool weatherEffects;
+        bool timeOfDay;
+        bool communityInfluence;
+        bool tradingActivity;
+        uint256 artComplexity;
+        uint256 animationSpeed;
+        uint256 colorPalette;
+        uint256 specialEffects;
     }
     
     // ============ STATE VARIABLES ============
     
-    // Optimized mappings with shorter names
     mapping(address => UserHistory) public userHist;
     mapping(uint256 => address) public nftOwner;
     mapping(address => uint256) public userMintCount;
     mapping(address => uint256) public userGasbackBalance;
+    mapping(address => UserRanking) public userRankings;
     
     CommStats public commStats;
     Pricing public pricing;
-    
-    // Dynamic rarity/leaderboard system
-    mapping(address => UserRanking) public userRankings;
-    address[] public rankedUsers;
-    
-    // Single art version - all NFTs use this
     ArtVersion public currentArt;
     ArtFeatures public artFeatures;
     
-    // Gasback tracking
+    address[] public rankedUsers;
     uint256 public totalGasbackDistributed;
     
-    // Constants with shorter names
+    // Constants
     uint256 public constant FREE_ENTRIES = 3;
     uint256 public constant PREMIUM_COST = 0.001 ether;
     uint256 public constant MAX_SUPPLY = 1111;
@@ -133,7 +121,6 @@ contract ShapeL2FlowerMoodJournal is ERC721, Ownable, Pausable {
         pricing.introPrice = 0.0042 ether;
         pricing.currentPrice = pricing.introPrice;
         
-        // Initialize art features
         artFeatures = ArtFeatures({
             beeEnabled: true,
             soundEnabled: false,
@@ -152,15 +139,6 @@ contract ShapeL2FlowerMoodJournal is ERC721, Ownable, Pausable {
     
     // ============ CORE FUNCTIONS ============
     
-    /**
-     * @dev Record user mood with optimized data storage
-     * @param emotion Emotion code (0-8)
-     * @param conf Confidence score (0-10000)
-     * @param probs Top 5 emotion probabilities
-     * @param entropy Complexity entropy (0-100)
-     * @param gap Confidence gap (0-100)
-     * @param nftId NFT token ID
-     */
     function recordMood(
         uint8 emotion,
         uint16 conf,
@@ -189,13 +167,11 @@ contract ShapeL2FlowerMoodJournal is ERC721, Ownable, Pausable {
         UserHistory storage hist = userHist[msg.sender];
         uint32 today = uint32(block.timestamp / 1 days);
         
-        // Link NFT to user if not already linked
         if (nftOwner[nftId] == address(0)) {
             nftOwner[nftId] = msg.sender;
             hist.nftId = nftId;
         }
         
-        // Check daily limits
         if (hist.lastDate != today) {
             hist.dailyCount = 0;
             hist.lastDate = today;
@@ -205,7 +181,6 @@ contract ShapeL2FlowerMoodJournal is ERC721, Ownable, Pausable {
             require(msg.value >= PREMIUM_COST, "Premium entry cost required");
         }
         
-        // Create optimized mood entry
         MoodEntry memory entry = MoodEntry({
             ts: uint32(block.timestamp),
             conf: conf,
@@ -219,27 +194,18 @@ contract ShapeL2FlowerMoodJournal is ERC721, Ownable, Pausable {
         hist.dailyCount++;
         hist.total++;
         
-        // Update community stats
         commStats.totalScore += conf;
         commStats.participants++;
         commStats.avgMood = commStats.totalScore / commStats.participants;
         commStats.lastUpdate = uint64(block.timestamp);
         
-        // Update streak
         updateStreak(msg.sender, emotion);
-        
-        // Update user ranking for dynamic rarity/leaderboard
         updateUserRanking(msg.sender, conf);
-        
-        // Distribute gasback
         distributeGasback(msg.sender, gasleft());
         
         emit MoodRecorded(msg.sender, emotion, conf, uint32(block.timestamp));
     }
     
-    /**
-     * @dev Mint flower NFT with dynamic pricing
-     */
     function mintFlowerNFT(
         uint8 emotion,
         uint16 conf,
@@ -255,7 +221,6 @@ contract ShapeL2FlowerMoodJournal is ERC721, Ownable, Pausable {
         uint256 requiredPrice = getCurrentMintPrice();
         require(msg.value >= requiredPrice, "Insufficient payment");
         
-        // Update pricing
         if (msg.value > requiredPrice) {
             pricing.currentPrice = uint128(msg.value);
         }
@@ -264,24 +229,17 @@ contract ShapeL2FlowerMoodJournal is ERC721, Ownable, Pausable {
         pricing.totalMinted++;
         userMintCount[msg.sender]++;
         
-        // Mint NFT
         uint256 tokenId = pricing.totalMinted;
         _mint(msg.sender, tokenId);
-        
-        // Link NFT to user
         nftOwner[tokenId] = msg.sender;
         
-        // Record initial mood
         _recordMood(emotion, conf, probs, entropy, gap, uint16(tokenId));
         
         emit FlowerMinted(msg.sender, tokenId, msg.value);
     }
     
-    // ============ DYNAMIC PRICING ============
+    // ============ PRICING & STREAKS ============
     
-    /**
-     * @dev Get current mint price based on time since last mint
-     */
     function getCurrentMintPrice() public view returns (uint256) {
         uint256 timeSinceLastMint = block.timestamp - pricing.lastMint;
         uint256 decayTime = 48 hours;
@@ -292,15 +250,9 @@ contract ShapeL2FlowerMoodJournal is ERC721, Ownable, Pausable {
         return pricing.currentPrice;
     }
     
-    // ============ STREAK SYSTEM ============
-    
-    /**
-     * @dev Update user streak based on emotion
-     */
     function updateStreak(address user, uint8 emotion) internal {
         UserHistory storage hist = userHist[user];
         
-        // Check if it's a happy emotion (0=happy, 1=joy, 7=surprise)
         if (emotion == 0 || emotion == 1 || emotion == 7) {
             hist.streak++;
             if (hist.streak > hist.maxStreak) {
@@ -313,9 +265,6 @@ contract ShapeL2FlowerMoodJournal is ERC721, Ownable, Pausable {
         emit StreakUpdated(user, hist.streak, hist.maxStreak);
     }
     
-    /**
-     * @dev Get streak features for bee animation
-     */
     function getStreakFeatures(address user) external view returns (
         bool beeAppearance,
         bool beeRangeControl,
@@ -326,49 +275,38 @@ contract ShapeL2FlowerMoodJournal is ERC721, Ownable, Pausable {
         uint256 streak = userHist[user].streak;
         
         return (
-            streak >= 3,  // Bee appears after 3 days
-            streak >= 5,  // Bee range control after 5 days
-            streak >= 7,  // Stalk growth after 7 days
-            streak >= 10, // Glow intensity after 10 days
-            streak >= 15  // Rotation speed after 15 days
+            streak >= 3,
+            streak >= 5,
+            streak >= 7,
+            streak >= 10,
+            streak >= 15
         );
     }
     
-    // ============ DYNAMIC RARITY/LEADERBOARD ============
+    // ============ RANKING SYSTEM ============
     
-    /**
-     * @dev Update user ranking when mood is recorded
-     */
     function updateUserRanking(address user, uint256 moodScore) internal {
         UserRanking storage ranking = userRankings[user];
         
-        // Add user to ranked list if not already there
         if (ranking.totalEntries == 0) {
             rankedUsers.push(user);
         }
         
-        // Update scores
         ranking.totalMoodScore += moodScore;
         ranking.totalEntries++;
         ranking.averageMoodScore = ranking.totalMoodScore / ranking.totalEntries;
         ranking.lastUpdateTime = block.timestamp;
         
-        // Update streak info
         UserHistory storage hist = userHist[user];
         ranking.streakCount = hist.streak;
         ranking.maxStreak = hist.maxStreak;
         
-        // Recalculate all rankings
         recalculateRankings();
         
         emit UserRankingUpdated(user, ranking.rank, ranking.averageMoodScore);
     }
     
-    /**
-     * @dev Recalculate all user rankings
-     */
     function recalculateRankings() internal {
-        // Sort users by average mood score (descending)
         for (uint256 i = 0; i < rankedUsers.length; i++) {
             for (uint256 j = i + 1; j < rankedUsers.length; j++) {
                 UserRanking storage rankA = userRankings[rankedUsers[i]];
@@ -392,15 +330,11 @@ contract ShapeL2FlowerMoodJournal is ERC721, Ownable, Pausable {
             }
         }
         
-        // Update rank numbers
         for (uint256 i = 0; i < rankedUsers.length; i++) {
             userRankings[rankedUsers[i]].rank = i + 1;
         }
     }
     
-    /**
-     * @dev Get user's current rank and stats
-     */
     function getUserRanking(address user) external view returns (
         uint256 rank,
         uint256 totalMoodScore,
@@ -420,9 +354,6 @@ contract ShapeL2FlowerMoodJournal is ERC721, Ownable, Pausable {
         );
     }
     
-    /**
-     * @dev Get top users for leaderboard
-     */
     function getTopUsers(uint256 count) external view returns (
         address[] memory users,
         uint256[] memory ranks,
@@ -443,11 +374,8 @@ contract ShapeL2FlowerMoodJournal is ERC721, Ownable, Pausable {
         return (users, ranks, scores);
     }
     
-    // ============ COMMUNITY FEATURES ============
+    // ============ COMMUNITY & ART ============
     
-    /**
-     * @dev Get community statistics
-     */
     function getCommunityStats() external view returns (
         uint256 totalParticipants,
         uint256 averageCommunityMood,
@@ -464,9 +392,6 @@ contract ShapeL2FlowerMoodJournal is ERC721, Ownable, Pausable {
         );
     }
     
-    /**
-     * @dev Calculate average streak across all users
-     */
     function calculateAverageStreak() internal view returns (uint256) {
         uint256 totalStreak = 0;
         uint256 userCount = 0;
@@ -479,9 +404,6 @@ contract ShapeL2FlowerMoodJournal is ERC721, Ownable, Pausable {
         return userCount > 0 ? totalStreak / userCount : 0;
     }
     
-    /**
-     * @dev Get highest streak across all users
-     */
     function getHighestStreak() internal view returns (uint256) {
         uint256 highest = 0;
         
@@ -495,17 +417,11 @@ contract ShapeL2FlowerMoodJournal is ERC721, Ownable, Pausable {
         return highest;
     }
     
-    // ============ ART MANAGEMENT ============
-    
-    /**
-     * @dev Update the single art version
-     */
     function updateArtVersion(
         string memory version,
         string memory htmlArt,
         string memory artAssets
     ) external onlyOwner {
-        // Update the single art version - all NFTs automatically use new art
         currentArt = ArtVersion({
             version: version,
             htmlArt: htmlArt,
@@ -517,16 +433,10 @@ contract ShapeL2FlowerMoodJournal is ERC721, Ownable, Pausable {
         emit ArtVersionUpdated(version, block.timestamp);
     }
     
-    /**
-     * @dev Get the current art for any NFT
-     */
     function getArtHTML() external view returns (string memory) {
         return currentArt.htmlArt;
     }
     
-    /**
-     * @dev Get art version info
-     */
     function getArtVersion() external view returns (
         string memory version,
         uint256 timestamp
@@ -534,9 +444,6 @@ contract ShapeL2FlowerMoodJournal is ERC721, Ownable, Pausable {
         return (currentArt.version, currentArt.timestamp);
     }
     
-    /**
-     * @dev Update art features
-     */
     function updateArtFeatures(
         bool beeEnabled,
         bool soundEnabled,
@@ -569,22 +476,16 @@ contract ShapeL2FlowerMoodJournal is ERC721, Ownable, Pausable {
         emit ArtFeaturesUpdated();
     }
     
-    // ============ GASBACK SYSTEM ============
+    // ============ GASBACK & UTILITIES ============
     
-    /**
-     * @dev Distribute gasback to users
-     */
     function distributeGasback(address user, uint256 gasUsed) internal {
-        uint256 gasbackAmount = (gasUsed * GASBACK_PERCENTAGE) / 100; // 80% gasback
+        uint256 gasbackAmount = (gasUsed * GASBACK_PERCENTAGE) / 100;
         userGasbackBalance[user] += gasbackAmount;
         totalGasbackDistributed += gasbackAmount;
         
         emit GasbackDistributed(user, gasbackAmount);
     }
     
-    /**
-     * @dev Claim gasback balance
-     */
     function claimGasback() external {
         uint256 amount = userGasbackBalance[msg.sender];
         require(amount > 0, "No gasback to claim");
@@ -593,11 +494,6 @@ contract ShapeL2FlowerMoodJournal is ERC721, Ownable, Pausable {
         payable(msg.sender).transfer(amount);
     }
     
-    // ============ HELPER FUNCTIONS ============
-    
-    /**
-     * @dev Convert emotion code to string
-     */
     function getEmotionString(uint8 emotionCode) public pure returns (string memory) {
         if (emotionCode == 0) return "happy";
         if (emotionCode == 1) return "joy";
@@ -611,9 +507,6 @@ contract ShapeL2FlowerMoodJournal is ERC721, Ownable, Pausable {
         return "unknown";
     }
     
-    /**
-     * @dev Convert string to emotion code
-     */
     function getEmotionCode(string memory emotion) public pure returns (uint8) {
         if (keccak256(abi.encodePacked(emotion)) == keccak256(abi.encodePacked("happy"))) return 0;
         if (keccak256(abi.encodePacked(emotion)) == keccak256(abi.encodePacked("joy"))) return 1;
@@ -624,14 +517,11 @@ contract ShapeL2FlowerMoodJournal is ERC721, Ownable, Pausable {
         if (keccak256(abi.encodePacked(emotion)) == keccak256(abi.encodePacked("shame"))) return 6;
         if (keccak256(abi.encodePacked(emotion)) == keccak256(abi.encodePacked("surprise"))) return 7;
         if (keccak256(abi.encodePacked(emotion)) == keccak256(abi.encodePacked("neutral"))) return 8;
-        return 8; // default to neutral
+        return 8;
     }
     
     // ============ QUERY FUNCTIONS ============
     
-    /**
-     * @dev Get user mood history
-     */
     function getUserMoodHistory(address user) external view returns (
         MoodEntry[] memory entries,
         uint16 currentStreak,
@@ -647,16 +537,10 @@ contract ShapeL2FlowerMoodJournal is ERC721, Ownable, Pausable {
         );
     }
     
-    /**
-     * @dev Get community average mood
-     */
     function getCommunityAverageMood() external view returns (uint256) {
         return commStats.avgMood;
     }
     
-    /**
-     * @dev Get mood trend for user
-     */
     function getMoodTrend(address user, uint256 numDays) external view returns (uint256[] memory) {
         UserHistory storage hist = userHist[user];
         uint256[] memory trend = new uint256[](numDays);
@@ -668,51 +552,33 @@ contract ShapeL2FlowerMoodJournal is ERC721, Ownable, Pausable {
         return trend;
     }
     
-    // ============ SECURITY FUNCTIONS ============
+    // ============ SECURITY & ADMIN ============
     
-    /**
-     * @dev Emergency pause
-     */
     function emergencyPause() external onlyOwner {
         _pause();
     }
     
-    /**
-     * @dev Unpause contract
-     */
     function unpause() external onlyOwner {
         _unpause();
     }
     
-    /**
-     * @dev Withdraw contract balance
-     */
     function withdraw() external onlyOwner {
         payable(owner()).transfer(address(this).balance);
     }
     
-    /**
-     * @dev Get contract balance
-     */
     function getContractBalance() external view returns (uint256) {
         return address(this).balance;
     }
     
-    // ============ OVERRIDE FUNCTIONS ============
+    // ============ TOKEN URI ============
     
-    /**
-     * @dev Override tokenURI to provide dynamic metadata
-     */
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         require(ownerOf(tokenId) != address(0), "Token does not exist");
         
         address owner = ownerOf(tokenId);
         UserHistory storage hist = userHist[owner];
-        
-        // Get user ranking
         UserRanking storage ranking = userRankings[owner];
         
-        // Create metadata
         string memory metadata = string(abi.encodePacked(
             '{"name":"Flower #', toString(tokenId), '",',
             '"description":"AI-generated flower based on mood analysis",',
@@ -733,11 +599,6 @@ contract ShapeL2FlowerMoodJournal is ERC721, Ownable, Pausable {
         ));
     }
     
-    // ============ UTILITY FUNCTIONS ============
-    
-    /**
-     * @dev Convert uint256 to string
-     */
     function toString(uint256 value) internal pure returns (string memory) {
         if (value == 0) {
             return "0";
@@ -757,8 +618,5 @@ contract ShapeL2FlowerMoodJournal is ERC721, Ownable, Pausable {
         return string(buffer);
     }
     
-    /**
-     * @dev Receive function
-     */
     receive() external payable {}
 }
