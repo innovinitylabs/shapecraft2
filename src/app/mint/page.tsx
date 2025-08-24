@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Flower, Sparkles, Heart, Zap } from 'lucide-react';
+import { Flower, Sparkles, Heart, Zap, Code, Eye, EyeOff } from 'lucide-react';
 import MoodInput from '@/components/MoodInput';
 import FlowerArt from '@/components/FlowerArt';
 import { FlowerArtParameters } from '@/services/moodClassifierService';
@@ -11,6 +11,7 @@ export default function MintPage() {
   const [moodParams, setMoodParams] = useState<FlowerArtParameters | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [mintStep, setMintStep] = useState<'input' | 'preview' | 'mint'>('input');
+  const [showRawData, setShowRawData] = useState(false);
 
   const handleMoodAnalyzed = (params: FlowerArtParameters) => {
     setMoodParams(params);
@@ -112,6 +113,259 @@ export default function MintPage() {
                           <p className="text-white font-medium">{moodParams.petalParams.petalCount}</p>
                         </div>
                       </div>
+                    </div>
+
+                    {/* Core ML Classifier Output */}
+                    <div className="bg-green-900/20 backdrop-blur-sm rounded-2xl p-6 border border-green-500/30">
+                      <h3 className="text-xl font-semibold text-green-300 mb-4 flex items-center">
+                        <span className="bg-green-500 text-white px-2 py-1 rounded text-xs mr-2">ML</span>
+                        Core Classifier Output
+                      </h3>
+                      
+                      <div className="space-y-6 text-xs">
+                        {/* Basic Classifier Info */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                          <div className="bg-green-900/30 rounded p-2">
+                            <p className="text-green-300/60">Predicted Emotion</p>
+                            <p className="text-green-200 font-mono capitalize">{moodParams.currentEmotion}</p>
+                          </div>
+                          <div className="bg-green-900/30 rounded p-2">
+                            <p className="text-green-300/60">Confidence</p>
+                            <p className="text-green-200 font-mono">{moodParams.confidence.toFixed(4)}</p>
+                          </div>
+                          <div className="bg-green-900/30 rounded p-2">
+                            <p className="text-green-300/60">Confidence %</p>
+                            <p className="text-green-200 font-mono">{moodParams.confidencePercentage.toFixed(1)}%</p>
+                          </div>
+                          <div className="bg-green-900/30 rounded p-2">
+                            <p className="text-green-300/60">Second Emotion</p>
+                            <p className="text-green-200 font-mono capitalize">{moodParams.mlParams?.secondEmotion || 'N/A'}</p>
+                          </div>
+                        </div>
+
+                        {/* Emotion Probabilities */}
+                        <div className="bg-green-900/20 rounded p-3">
+                          <h4 className="text-green-300 font-semibold mb-2">Emotion Probabilities (Raw ML Output)</h4>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                            {moodParams.mlParams?.emotionProbabilities && Object.entries(moodParams.mlParams.emotionProbabilities).map(([emotion, probability]) => (
+                              <div key={emotion} className={`${emotion === moodParams.currentEmotion ? 'bg-green-700/30 border border-green-500/50' : 'bg-green-900/30'} rounded p-2`}>
+                                <span className="text-green-300/60 capitalize">{emotion}:</span>
+                                <span className="text-green-200 font-mono ml-1">{((probability as number) * 100).toFixed(1)}%</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* ML Metadata */}
+                        <div className="bg-green-900/20 rounded p-3">
+                          <h4 className="text-green-300 font-semibold mb-2">ML Model Metadata</h4>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                            <div><span className="text-green-300/60">Second Confidence:</span> <span className="text-green-200 font-mono">{((moodParams.mlParams?.secondConfidence || 0) * 100).toFixed(1)}%</span></div>
+                            <div><span className="text-green-300/60">Confidence Gap:</span> <span className="text-green-200 font-mono">{(moodParams.mlParams?.confidenceGap || 0).toFixed(4)}</span></div>
+                            <div><span className="text-green-300/60">Complexity Entropy:</span> <span className="text-green-200 font-mono">{(moodParams.mlParams?.complexityEntropy || 0).toFixed(4)}</span></div>
+                            <div><span className="text-green-300/60">Intensity Multiplier:</span> <span className="text-green-200 font-mono">{moodParams.mlParams?.intensityMultiplier || 1}</span></div>
+                          </div>
+                        </div>
+
+                        {/* Sorted Emotions */}
+                        <div className="bg-green-900/20 rounded p-3">
+                          <h4 className="text-green-300 font-semibold mb-2">Sorted Emotions (Top 5)</h4>
+                          <div className="space-y-1">
+                            {moodParams.mlParams?.sortedEmotions?.slice(0, 5).map(([emotion, probability], index) => (
+                              <div key={emotion} className={`flex justify-between items-center p-2 rounded ${index === 0 ? 'bg-green-700/30 border border-green-500/50' : 'bg-green-900/30'}`}>
+                                <span className="text-green-200 font-mono capitalize">{emotion}</span>
+                                <span className="text-green-200 font-mono">{(probability * 100).toFixed(1)}%</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Dev Container - All Mood Classifier Values */}
+                    <div className="bg-red-900/20 backdrop-blur-sm rounded-2xl p-6 border border-red-500/30">
+                      <h3 className="text-xl font-semibold text-red-300 mb-4 flex items-center">
+                        <span className="bg-red-500 text-white px-2 py-1 rounded text-xs mr-2">DEV</span>
+                        Generated Parameters (API Wrapper)
+                      </h3>
+                      
+                      <div className="space-y-6 text-xs">
+                        {/* Basic Info */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                          <div className="bg-red-900/30 rounded p-2">
+                            <p className="text-red-300/60">Current Emotion</p>
+                            <p className="text-red-200 font-mono">{moodParams.currentEmotion}</p>
+                          </div>
+                          <div className="bg-red-900/30 rounded p-2">
+                            <p className="text-red-300/60">Confidence</p>
+                            <p className="text-red-200 font-mono">{moodParams.confidence.toFixed(3)}</p>
+                          </div>
+                          <div className="bg-red-900/30 rounded p-2">
+                            <p className="text-red-300/60">Confidence %</p>
+                            <p className="text-red-200 font-mono">{moodParams.confidencePercentage.toFixed(1)}%</p>
+                          </div>
+                          <div className="bg-red-900/30 rounded p-2">
+                            <p className="text-red-300/60">Mood Intensity</p>
+                            <p className="text-red-200 font-mono">{moodParams.moodSettings.intensity}</p>
+                          </div>
+                        </div>
+
+                        {/* Petal Parameters */}
+                        <div className="bg-red-900/20 rounded p-3">
+                          <h4 className="text-red-300 font-semibold mb-2">Petal Parameters</h4>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                            <div><span className="text-red-300/60">Layer Count:</span> <span className="text-red-200 font-mono">{moodParams.petalParams.layerCount}</span></div>
+                            <div><span className="text-red-300/60">Petal Count:</span> <span className="text-red-200 font-mono">{moodParams.petalParams.petalCount}</span></div>
+                            <div><span className="text-red-300/60">Base Radius:</span> <span className="text-red-200 font-mono">{moodParams.petalParams.baseLayerRadius}</span></div>
+                            <div><span className="text-red-300/60">Radius Decrease:</span> <span className="text-red-200 font-mono">{moodParams.petalParams.layerRadiusDecrease}</span></div>
+                            <div><span className="text-red-300/60">Petal Rotation:</span> <span className="text-red-200 font-mono">{moodParams.petalParams.petalRotation}</span></div>
+                            <div><span className="text-red-300/60">Geometry Segments:</span> <span className="text-red-200 font-mono">{moodParams.petalParams.geometrySegments}</span></div>
+                          </div>
+                          <div className="mt-2">
+                            <span className="text-red-300/60">Layer Rotations:</span> <span className="text-red-200 font-mono">[{moodParams.petalParams.layerRotations.join(', ')}]</span>
+                          </div>
+                          <div className="mt-1">
+                            <span className="text-red-300/60">Layer Offsets:</span> <span className="text-red-200 font-mono">[{moodParams.petalParams.layerOffsets.join(', ')}]</span>
+                          </div>
+                        </div>
+
+                        {/* Heartbeat Settings */}
+                        <div className="bg-red-900/20 rounded p-3">
+                          <h4 className="text-red-300 font-semibold mb-2">Heartbeat Settings</h4>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                            <div><span className="text-red-300/60">BPM:</span> <span className="text-red-200 font-mono">{moodParams.heartbeatSettings.bpm}</span></div>
+                            <div><span className="text-red-300/60">Intensity:</span> <span className="text-red-200 font-mono">{moodParams.heartbeatSettings.intensity}</span></div>
+                            <div><span className="text-red-300/60">Pulse Rate:</span> <span className="text-red-200 font-mono">{moodParams.heartbeatParams.pulseUpdateRate}</span></div>
+                            <div><span className="text-red-300/60">Dual Pulse:</span> <span className="text-red-200 font-mono">{moodParams.heartbeatParams.dualPulseEnabled ? 'Yes' : 'No'}</span></div>
+                            <div><span className="text-red-300/60">Secondary Intensity:</span> <span className="text-red-200 font-mono">{moodParams.heartbeatParams.secondaryPulseIntensity}</span></div>
+                            <div><span className="text-red-300/60">Glow Range:</span> <span className="text-red-200 font-mono">{moodParams.heartbeatParams.glowIntensityRange.min}-{moodParams.heartbeatParams.glowIntensityRange.max}</span></div>
+                          </div>
+                        </div>
+
+                        {/* Rotation Parameters */}
+                        <div className="bg-red-900/20 rounded p-3">
+                          <h4 className="text-red-300 font-semibold mb-2">Rotation Parameters</h4>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                            <div><span className="text-red-300/60">Update Rate:</span> <span className="text-red-200 font-mono">{moodParams.rotationParams.rotationUpdateRate}</span></div>
+                            <div><span className="text-red-300/60">Alternating:</span> <span className="text-red-200 font-mono">{moodParams.rotationParams.alternatingEnabled ? 'Yes' : 'No'}</span></div>
+                            <div><span className="text-red-300/60">Individual Layer:</span> <span className="text-red-200 font-mono">{moodParams.rotationParams.individualLayerRotation ? 'Yes' : 'No'}</span></div>
+                            <div><span className="text-red-300/60">Direction:</span> <span className="text-red-200 font-mono">{moodParams.moodSettings.direction === 1 ? 'Clockwise' : 'Counter'}</span></div>
+                            <div><span className="text-red-300/60">Intensity Range:</span> <span className="text-red-200 font-mono">{moodParams.rotationParams.rotationIntensityRange.min}-{moodParams.rotationParams.rotationIntensityRange.max}</span></div>
+                          </div>
+                        </div>
+
+                        {/* Stalk Parameters */}
+                        <div className="bg-red-900/20 rounded p-3">
+                          <h4 className="text-red-300 font-semibold mb-2">Stalk Parameters</h4>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                            <div><span className="text-red-300/60">Base Length:</span> <span className="text-red-200 font-mono">{moodParams.stalkParams.baseLength}</span></div>
+                            <div><span className="text-red-300/60">Min Length:</span> <span className="text-red-200 font-mono">{moodParams.stalkParams.minLength}</span></div>
+                            <div><span className="text-red-300/60">Max Length:</span> <span className="text-red-200 font-mono">{moodParams.stalkParams.maxLength}</span></div>
+                            <div><span className="text-red-300/60">Current Length:</span> <span className="text-red-200 font-mono">{moodParams.stalkParams.currentLength}</span></div>
+                            <div><span className="text-red-300/60">Growth Speed:</span> <span className="text-red-200 font-mono">{moodParams.stalkParams.growthSpeed}</span></div>
+                            <div><span className="text-red-300/60">Decay Speed:</span> <span className="text-red-200 font-mono">{moodParams.stalkParams.decaySpeed}</span></div>
+                          </div>
+                        </div>
+
+                        {/* Bee Parameters */}
+                        <div className="bg-red-900/20 rounded p-3">
+                          <h4 className="text-red-300 font-semibold mb-2">Bee Parameters</h4>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                            <div><span className="text-red-300/60">Base Scale:</span> <span className="text-red-200 font-mono">{moodParams.beeParams.baseScale}</span></div>
+                            <div><span className="text-red-300/60">Wing Speed:</span> <span className="text-red-200 font-mono">{moodParams.beeParams.wingSpeed}</span></div>
+                            <div><span className="text-red-300/60">Should Appear:</span> <span className="text-red-200 font-mono">{moodParams.beeParams.shouldAppear ? 'Yes' : 'No'}</span></div>
+                            <div><span className="text-red-300/60">Position:</span> <span className="text-red-200 font-mono">({moodParams.beeParams.basePosition.x.toFixed(1)}, {moodParams.beeParams.basePosition.y.toFixed(1)}, {moodParams.beeParams.basePosition.z.toFixed(1)})</span></div>
+                          </div>
+                        </div>
+
+                        {/* Streak Parameters */}
+                        <div className="bg-red-900/20 rounded p-3">
+                          <h4 className="text-red-300 font-semibold mb-2">Streak Parameters</h4>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                            <div><span className="text-red-300/60">Current Streak:</span> <span className="text-red-200 font-mono">{moodParams.streakParams.currentStreakDays} days</span></div>
+                            <div><span className="text-red-300/60">Max Streak:</span> <span className="text-red-200 font-mono">{moodParams.streakParams.maxStreakDays} days</span></div>
+                            <div><span className="text-red-300/60">Decay Rate:</span> <span className="text-red-200 font-mono">{moodParams.streakParams.streakDecayRate}</span></div>
+                            <div><span className="text-red-300/60">Multiplier:</span> <span className="text-red-200 font-mono">{moodParams.streakParams.streakMultiplier}</span></div>
+                          </div>
+                          <div className="mt-2">
+                            <span className="text-red-300/60">Streak Features:</span>
+                            <div className="grid grid-cols-2 gap-1 mt-1">
+                              <span className="text-red-200 font-mono">Bee Appearance: {moodParams.streakParams.streakFeatures.beeAppearance ? 'Yes' : 'No'}</span>
+                              <span className="text-red-200 font-mono">Bee Range: {moodParams.streakParams.streakFeatures.beeRangeControl ? 'Yes' : 'No'}</span>
+                              <span className="text-red-200 font-mono">Stalk Growth: {moodParams.streakParams.streakFeatures.stalkGrowth ? 'Yes' : 'No'}</span>
+                              <span className="text-red-200 font-mono">Glow Intensity: {moodParams.streakParams.streakFeatures.glowIntensity ? 'Yes' : 'No'}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Raw API Data Display */}
+                    <div className="bg-blue-900/20 backdrop-blur-sm rounded-2xl p-6 border border-blue-500/30">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-xl font-semibold text-blue-300 flex items-center">
+                          <span className="bg-blue-500 text-white px-2 py-1 rounded text-xs mr-2">API</span>
+                          <Code className="mr-2" size={20} />
+                          Raw API Response Data
+                        </h3>
+                        <button
+                          onClick={() => setShowRawData(!showRawData)}
+                          className="flex items-center space-x-2 px-3 py-1 bg-blue-500/20 hover:bg-blue-500/30 text-blue-200 rounded-lg transition-colors text-sm"
+                        >
+                          {showRawData ? <EyeOff size={16} /> : <Eye size={16} />}
+                          <span>{showRawData ? 'Hide' : 'Show'} Raw Data</span>
+                        </button>
+                      </div>
+                      
+                      <AnimatePresence>
+                        {showRawData && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="bg-blue-950/50 rounded-lg p-4 border border-blue-500/20">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-blue-300 text-sm font-medium">API Response JSON</span>
+                                <button
+                                  onClick={() => navigator.clipboard.writeText(JSON.stringify(moodParams, null, 2))}
+                                  className="text-blue-400 hover:text-blue-300 text-xs px-2 py-1 bg-blue-500/20 rounded transition-colors"
+                                >
+                                  Copy JSON
+                                </button>
+                              </div>
+                              <pre className="text-blue-200 text-xs overflow-x-auto whitespace-pre-wrap font-mono bg-blue-950/30 p-3 rounded border border-blue-500/10 max-h-96 overflow-y-auto">
+                                {JSON.stringify(moodParams, null, 2)}
+                              </pre>
+                            </div>
+                            
+                            {/* API Request Info */}
+                            <div className="mt-4 bg-blue-950/30 rounded-lg p-3 border border-blue-500/20">
+                              <h4 className="text-blue-300 font-medium mb-2 text-sm">API Request Information</h4>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                                <div>
+                                  <span className="text-blue-400">Endpoint:</span>
+                                  <span className="text-blue-200 font-mono ml-2">POST /api/mood-analysis</span>
+                                </div>
+                                <div>
+                                  <span className="text-blue-400">Base URL:</span>
+                                  <span className="text-blue-200 font-mono ml-2">{process.env.NEXT_PUBLIC_MOOD_CLASSIFIER_API_URL || 'https://shapes-of-mood.up.railway.app'}</span>
+                                </div>
+                                <div>
+                                  <span className="text-blue-400">Response Time:</span>
+                                  <span className="text-blue-200 font-mono ml-2">~2-3 seconds</span>
+                                </div>
+                                <div>
+                                  <span className="text-blue-400">Data Size:</span>
+                                  <span className="text-blue-200 font-mono ml-2">{(JSON.stringify(moodParams).length / 1024).toFixed(1)} KB</span>
+                                </div>
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
 
                     {/* Action Buttons */}

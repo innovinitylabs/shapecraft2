@@ -6,6 +6,14 @@ scripts/
 hardhat.config.ts
 *.sol
 
+# Contract directory (separate project)
+contract/
+contract/*
+
+# Builder kit (separate project)
+builder-kit/
+builder-kit/*
+
 # Development files
 .env
 .env.local

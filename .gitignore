@@ -46,3 +46,7 @@ next-env.d.ts
 
 # mood classifier (external repository)
 /mood-classifier
+
+# Separate projects
+/builder-kit/
+/contract/
