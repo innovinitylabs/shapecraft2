@@ -2,8 +2,15 @@
 
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { FlowerArtParameters } from '@/services/moodClassifierService';
+
+// Import OrbitControls dynamically to avoid SSR issues
+let OrbitControls: any;
+if (typeof window !== 'undefined') {
+  import('three/examples/jsm/controls/OrbitControls.js').then((module) => {
+    OrbitControls = module.OrbitControls;
+  });
+}
 
 interface FlowerArtProps {
   // Full mood classifier parameters
@@ -63,7 +70,7 @@ export default function FlowerArt({
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
-  const controlsRef = useRef<OrbitControls | null>(null);
+  const controlsRef = useRef<any>(null);
   const animationIdRef = useRef<number | null>(null);
   
   // Use parameters first, then fallback to moodParams for backward compatibility
@@ -861,29 +868,38 @@ export default function FlowerArt({
       console.log('Canvas already exists. Total children:', containerRef.current.children.length);
     }
 
-    // Controls
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.target.set(0, 0, 0);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    controls.enableZoom = true;
-    controls.enablePan = true;
-    controls.enableRotate = true;
-    controls.minDistance = 50;
-    controls.maxDistance = 300;
-    controls.update();
+    // Controls - Create after OrbitControls is loaded
+    const setupControls = async () => {
+      if (!OrbitControls) {
+        const module = await import('three/examples/jsm/controls/OrbitControls.js');
+        OrbitControls = module.OrbitControls;
+      }
+      
+      const controls = new OrbitControls(camera, renderer.domElement);
+      controls.target.set(0, 0, 0);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.enableZoom = true;
+      controls.enablePan = true;
+      controls.enableRotate = true;
+      controls.minDistance = 50;
+      controls.maxDistance = 300;
+      controls.update();
+      
+      // Store controls reference for updates
+      controlsRef.current = controls;
+      
+      // Debug: Log controls setup
+      console.log('OrbitControls created:', {
+        enabled: controls.enabled,
+        enableZoom: controls.enableZoom,
+        enablePan: controls.enablePan,
+        enableRotate: controls.enableRotate,
+        target: controls.target
+      });
+    };
     
-    // Store controls reference for updates
-    controlsRef.current = controls;
-    
-    // Debug: Log controls setup
-    console.log('OrbitControls created:', {
-      enabled: controls.enabled,
-      enableZoom: controls.enableZoom,
-      enablePan: controls.enablePan,
-      enableRotate: controls.enableRotate,
-      target: controls.target
-    });
+    setupControls();
 
     // Initialize flower
     calculateMoodRotation();
