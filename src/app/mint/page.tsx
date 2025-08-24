@@ -2,16 +2,23 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Flower, Sparkles, Heart, Zap, Code, Eye, EyeOff } from 'lucide-react';
+import { Flower, Sparkles, Heart, Zap, Code, Eye, EyeOff, Wallet } from 'lucide-react';
 import MoodInput from '@/components/MoodInput';
 import FlowerArt from '@/components/FlowerArt';
 import { FlowerArtParameters } from '@/services/moodClassifierService';
+import { useShapesOfMindContract } from '@/services/contractService';
+import { useAccount } from 'wagmi';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 export default function MintPage() {
   const [moodParams, setMoodParams] = useState<FlowerArtParameters | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [mintStep, setMintStep] = useState<'input' | 'preview' | 'mint'>('input');
   const [showRawData, setShowRawData] = useState(false);
+  
+  // Web3 integration
+  const { address, isConnected } = useAccount();
+  const { mintNewFlower, isLoading: isMinting, isMintSuccess, error } = useShapesOfMindContract();
 
   const handleMoodAnalyzed = (params: FlowerArtParameters) => {
     setMoodParams(params);
@@ -22,10 +29,35 @@ export default function MintPage() {
     setIsLoading(loading);
   };
 
-  const handleMint = () => {
-    // TODO: Implement actual minting logic
-    setMintStep('mint');
-    console.log('Minting with params:', moodParams);
+  const handleMint = async () => {
+    if (!isConnected) {
+      alert('Please connect your wallet first');
+      return;
+    }
+    
+    if (!moodParams) {
+      alert('No mood parameters available');
+      return;
+    }
+    
+    try {
+      // Convert mood parameters to contract format
+      const mintParams = {
+        mood: moodParams.currentEmotion as any, // Convert to MoodType
+        name: `Flower of ${moodParams.currentEmotion}`,
+        petalCount: moodParams.petalParams.petalCount,
+        colorHue: Math.floor(Math.random() * 360), // Generate random hue
+        saturation: 80, // Default saturation
+        brightness: 90, // Default brightness
+        isAnimated: true
+      };
+      
+      await mintNewFlower(mintParams);
+      setMintStep('mint');
+    } catch (err) {
+      console.error('Minting failed:', err);
+      alert('Minting failed. Please try again.');
+    }
   };
 
   const handleBackToInput = () => {
@@ -46,6 +78,9 @@ export default function MintPage() {
             animate={{ opacity: 1, y: 0 }}
             className="text-center"
           >
+            <div className="flex justify-end mb-4">
+              <ConnectButton />
+            </div>
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
               Mint Your Living Flower
             </h1>
@@ -378,10 +413,31 @@ export default function MintPage() {
                       </button>
                       <button
                         onClick={handleMint}
-                        className="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-medium rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2"
+                        disabled={!isConnected || isMinting}
+                        className={`flex-1 px-6 py-3 font-medium rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2 ${
+                          !isConnected 
+                            ? 'bg-gray-600 cursor-not-allowed' 
+                            : isMinting
+                            ? 'bg-yellow-600 cursor-not-allowed'
+                            : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700'
+                        } text-white`}
                       >
-                        <Zap size={18} />
-                        <span>Mint NFT</span>
+                        {!isConnected ? (
+                          <>
+                            <Wallet size={18} />
+                            <span>Connect Wallet</span>
+                          </>
+                        ) : isMinting ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                            <span>Minting...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Zap size={18} />
+                            <span>Mint NFT</span>
+                          </>
+                        )}
                       </button>
                     </div>
                   </motion.div>
@@ -395,15 +451,43 @@ export default function MintPage() {
                     className="text-center space-y-6"
                   >
                     <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
-                      <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Heart className="text-green-400" size={32} />
-                      </div>
-                      <h3 className="text-2xl font-bold text-white mb-2">
-                        Minting Your Flower...
-                      </h3>
-                      <p className="text-white/70">
-                        Your unique living flower NFT is being created on the blockchain
-                      </p>
+                      {isMinting ? (
+                        <>
+                          <div className="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <div className="w-8 h-8 border-2 border-yellow-400/20 border-t-yellow-400 rounded-full animate-spin" />
+                          </div>
+                          <h3 className="text-2xl font-bold text-white mb-2">
+                            Minting Your Flower...
+                          </h3>
+                          <p className="text-white/70">
+                            Your unique living flower NFT is being created on the blockchain
+                          </p>
+                        </>
+                      ) : isMintSuccess ? (
+                        <>
+                          <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Heart className="text-green-400" size={32} />
+                          </div>
+                          <h3 className="text-2xl font-bold text-white mb-2">
+                            Flower Minted Successfully!
+                          </h3>
+                          <p className="text-white/70">
+                            Your unique living flower NFT has been created on the blockchain
+                          </p>
+                        </>
+                      ) : error ? (
+                        <>
+                          <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span className="text-red-400 text-2xl">⚠️</span>
+                          </div>
+                          <h3 className="text-2xl font-bold text-white mb-2">
+                            Minting Failed
+                          </h3>
+                          <p className="text-red-400">
+                            {error}
+                          </p>
+                        </>
+                      ) : null}
                     </div>
                   </motion.div>
                 )}

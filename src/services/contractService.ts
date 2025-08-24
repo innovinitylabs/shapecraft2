@@ -1,6 +1,6 @@
 'use client';
 
-import { useAccount, useContractRead, useContractWrite, useWaitForTransaction } from 'wagmi';
+import { useAccount, useContractRead, useContractWrite, useWaitForTransactionReceipt } from 'wagmi';
 import { contractConfig, MOOD_VALUES, MoodType } from '@/lib/contract';
 import { useState } from 'react';
 
@@ -61,19 +61,16 @@ export const useShapesOfMindContract = () => {
   });
 
   // Wait for mint transaction
-  const { isLoading: isMinting, isSuccess: isMintSuccess } = useWaitForTransaction({
-    hash: mintData?.hash,
+  const { isLoading: isMinting, isSuccess: isMintSuccess } = useWaitForTransactionReceipt({
+    hash: mintData,
   });
 
   // Update flower function
-  const { write: updateFlower, data: updateData } = useContractWrite({
-    ...contractConfig,
-    functionName: 'updateFlower',
-  });
+  const { writeContract: updateFlower, data: updateData } = useContractWrite();
 
   // Wait for update transaction
-  const { isLoading: isUpdating, isSuccess: isUpdateSuccess } = useWaitForTransaction({
-    hash: updateData?.hash,
+  const { isLoading: isUpdating, isSuccess: isUpdateSuccess } = useWaitForTransactionReceipt({
+    hash: updateData,
   });
 
   // Mint a new flower
