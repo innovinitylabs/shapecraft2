@@ -6,6 +6,15 @@ export interface FlowerArtParameters {
   currentEmotion: string;
   confidence: number;
   confidencePercentage: number;
+  mlParams?: {
+    emotionProbabilities: Record<string, number>;
+    sortedEmotions: Array<[string, number]>;
+    secondEmotion: string;
+    secondConfidence: number;
+    complexityEntropy: number;
+    confidenceGap: number;
+    intensityMultiplier: number;
+  };
   petalParams: {
     layerCount: number;
     petalCount: number;

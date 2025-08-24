@@ -6,10 +6,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { FlowerArtParameters } from '@/services/moodClassifierService';
 
 interface FlowerArtProps {
-  // Full mood classifier parameters
   moodParams?: FlowerArtParameters;
-  
-  // Individual parameters for backward compatibility
   emotion?: string;
   petalCount?: number;
   layerCount?: number;
@@ -17,8 +14,6 @@ interface FlowerArtProps {
   heartbeatIntensity?: number;
   rotationSpeed?: number;
   rotationDirection?: number;
-  
-  // Legacy props for backward compatibility
   traits?: Record<string, unknown>;
   size?: number;
   interactive?: boolean;
@@ -26,7 +21,6 @@ interface FlowerArtProps {
   className?: string;
 }
 
-// Generate flower traits for gallery display
 export function generateFlowerTraits(index: number) {
   const emotions = ['happy', 'joy', 'sad', 'fear', 'anger', 'disgust', 'shame', 'surprise', 'neutral'];
   const emotion = emotions[index % emotions.length];
@@ -52,9 +46,7 @@ export default function FlowerArt({
   rotationSpeed = 0.2,
   rotationDirection = 1,
   size = 300,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interactive = false,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onMoodChange,
   className = ''
 }: FlowerArtProps) {
@@ -78,6 +70,7 @@ export default function FlowerArt({
   const effectivePetalRotation = moodParams?.petalParams?.petalRotation || 0.1;
   const effectiveLayerRotations = moodParams?.petalParams?.layerRotations || new Array(effectiveLayerCount).fill(0);
   const effectiveLayerOffsets = moodParams?.petalParams?.layerOffsets || new Array(effectiveLayerCount).fill(0);
+  const effectiveTradingActivity = moodParams?.connectorParams?.currentColor ? 0.5 : 0.5;
 
   // Flower state
   const flowerStateRef = useRef({
@@ -94,20 +87,21 @@ export default function FlowerArt({
     moodRotationSpeed: effectiveRotationSpeed,
     moodRotationDirection: effectiveRotationDirection,
     heartbeatBPM: effectiveHeartbeatBPM,
-    heartbeatIntensity: effectiveHeartbeatIntensity
+    heartbeatIntensity: effectiveHeartbeatIntensity,
+    tradingActivity: effectiveTradingActivity
   });
 
   // Emotion-based colors
   const emotionColors = {
-    "happy": "#FFD700",    // Golden yellow
-    "joy": "#FF69B4",      // Hot pink
-    "sad": "#4169E1",      // Royal blue
-    "fear": "#800080",     // Purple
-    "anger": "#FF4500",    // Orange red
-    "disgust": "#228B22",  // Forest green
-    "shame": "#FFB6C1",    // Light pink
-    "surprise": "#FF1493", // Deep pink
-    "neutral": "#C0C0C0"   // Silver
+    "happy": "#FFD700",
+    "joy": "#FF69B4",
+    "sad": "#4169E1",
+    "fear": "#800080",
+    "anger": "#FF4500",
+    "disgust": "#228B22",
+    "shame": "#FFB6C1",
+    "surprise": "#FF1493",
+    "neutral": "#C0C0C0"
   };
 
   // Flower meshes
@@ -133,7 +127,7 @@ export default function FlowerArt({
     return darkenedHex;
   };
 
-  // Calculate mood rotation
+  // Calculate mood rotation with hard cap
   const calculateMoodRotation = () => {
     const moodSettings = {
       "happy": { intensity: 0.8, direction: 1 },
@@ -147,421 +141,243 @@ export default function FlowerArt({
       "neutral": { intensity: 0.2, direction: 1 }
     };
     
-    const mood = moodSettings[emotion as keyof typeof moodSettings] || moodSettings["neutral"];
-    flowerStateRef.current.moodRotationSpeed = mood.intensity;
+    const mood = moodSettings[effectiveEmotion as keyof typeof moodSettings] || moodSettings["neutral"];
+    
+    // Apply hard cap to rotation speed (maximum 0.8)
+    const maxRotationSpeed = 0.8;
+    flowerStateRef.current.moodRotationSpeed = Math.min(mood.intensity, maxRotationSpeed);
     flowerStateRef.current.moodRotationDirection = mood.direction;
   };
 
-  // Update advanced mood rotation with alternating and individual control
-  const updateAdvancedMoodRotation = () => {
-    const state = flowerStateRef.current;
-    const rotationParams = moodParams?.rotationParams;
-    
-    if (!rotationParams) {
-      // Fallback to basic rotation with default animation
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const t = Date.now() * 0.001;
-      petalLayersRef.current.forEach((layer, layerIndex) => {
-        const layerDirection = layerIndex % 2 === 0 ? 1 : -1;
-        const rotationSpeed = 0.02;
-        const oldOffset = state.layerOffsets[layerIndex];
-        state.layerOffsets[layerIndex] += rotationSpeed * layerDirection;
-        state.layerOffsets[layerIndex] = state.layerOffsets[layerIndex] % 1;
-        if (state.layerOffsets[layerIndex] < 0) state.layerOffsets[layerIndex] += 1;
-        
-        // Debug: Log layer offset changes (only occasionally)
-        if (Math.random() < 0.01 && layerIndex === 0) {
-          console.log('Layer offset update:', {
-            layerIndex,
-            oldOffset: oldOffset.toFixed(3),
-            newOffset: state.layerOffsets[layerIndex].toFixed(3),
-            direction: layerDirection,
-            speed: rotationSpeed
-          });
-        }
-      });
-      return;
-    }
-    
-    const rotationUpdateRate = rotationParams.rotationUpdateRate || 1;
-    const alternatingEnabled = rotationParams.alternatingEnabled || true;
-    const individualLayerRotation = rotationParams.individualLayerRotation || false;
-    const rotationIntensityRange = rotationParams.rotationIntensityRange || { min: 0.01, max: 0.05 };
-    const directionOptions = rotationParams.directionOptions || { clockwise: 1, counterclockwise: -1 };
-    
-    if (state.moodRotationSpeed > 0) {
-      petalLayersRef.current.forEach((layer, layerIndex) => {
-        let layerDirection = state.moodRotationDirection;
-        
-        // Apply alternating direction if enabled
-        if (alternatingEnabled) {
-          layerDirection = layerIndex % 2 === 0 ? directionOptions.clockwise : directionOptions.counterclockwise;
-        }
-        
-        // Apply individual layer rotation if enabled
-        let rotationSpeed = state.moodRotationSpeed;
-        if (individualLayerRotation) {
-          const intensityRange = rotationIntensityRange.max - rotationIntensityRange.min;
-          rotationSpeed = rotationIntensityRange.min + (Math.random() * intensityRange);
-        }
-        
-        // Update layer offset based on advanced rotation parameters
-        state.layerOffsets[layerIndex] += rotationSpeed * layerDirection * 0.02 * rotationUpdateRate;
-        
-        // Keep offset within 0-1 range
-        state.layerOffsets[layerIndex] = state.layerOffsets[layerIndex] % 1;
-        if (state.layerOffsets[layerIndex] < 0) state.layerOffsets[layerIndex] += 1;
-      });
-    }
-  };
-
-  // Legacy mood rotation function for backward compatibility
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // Update mood rotation with hard cap
   const updateMoodRotation = () => {
     const state = flowerStateRef.current;
+    
     if (state.moodRotationSpeed > 0) {
+      const maxRotationSpeed = 0.8;
+      const cappedRotationSpeed = Math.min(state.moodRotationSpeed, maxRotationSpeed);
+      
       petalLayersRef.current.forEach((layer, layerIndex) => {
         const layerDirection = layerIndex % 2 === 0 ? state.moodRotationDirection : -state.moodRotationDirection;
-        state.layerOffsets[layerIndex] += state.moodRotationSpeed * layerDirection * 0.02;
+        state.layerOffsets[layerIndex] += cappedRotationSpeed * layerDirection * 0.02;
         state.layerOffsets[layerIndex] = state.layerOffsets[layerIndex] % 1;
         if (state.layerOffsets[layerIndex] < 0) state.layerOffsets[layerIndex] += 1;
       });
     }
   };
 
-  // Update advanced heartbeat glow with dual pulse and ranges
-  const updateAdvancedHeartbeatGlow = () => {
+  // Calculate heartbeat BPM
+  const calculateHeartbeatBPM = () => {
+    const heartbeatSettings = {
+      "happy": { bpm: 85, intensity: 0.6 },
+      "joy": { bpm: 95, intensity: 0.8 },
+      "sad": { bpm: 55, intensity: 0.2 },
+      "fear": { bpm: 110, intensity: 0.9 },
+      "anger": { bpm: 100, intensity: 0.7 },
+      "disgust": { bpm: 70, intensity: 0.4 },
+      "shame": { bpm: 65, intensity: 0.3 },
+      "surprise": { bpm: 90, intensity: 0.7 },
+      "neutral": { bpm: 72, intensity: 0.4 }
+    };
+    
+    const mood = heartbeatSettings[effectiveEmotion as keyof typeof heartbeatSettings] || heartbeatSettings["neutral"];
+    flowerStateRef.current.heartbeatBPM = mood.bpm;
+    flowerStateRef.current.heartbeatIntensity = mood.intensity;
+  };
+
+  // Update heartbeat glow with hard cap
+  const updateHeartbeatGlow = () => {
     const state = flowerStateRef.current;
     const t = Date.now() * 0.001;
     const heartbeatPeriod = 60 / state.heartbeatBPM;
-    const heartbeatPhase = (t % heartbeatPeriod) / heartbeatPeriod;
-    
-    // Advanced heartbeat parameters
-    const heartbeatParams = moodParams?.heartbeatParams;
-    const pulseUpdateRate = heartbeatParams?.pulseUpdateRate || 1;
-    const dualPulseEnabled = heartbeatParams?.dualPulseEnabled || false;
-    const secondaryPulseIntensity = heartbeatParams?.secondaryPulseIntensity || 0.3;
-    const glowIntensityRange = heartbeatParams?.glowIntensityRange || { min: 0.1, max: 0.8 };
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const bpmRange = heartbeatParams?.bpmRange || { min: 60, max: 120 };
-    
-    // Primary pulse
-    const pulse1 = Math.sin(heartbeatPhase * Math.PI * 2 * pulseUpdateRate);
-    
-    // Secondary pulse (if enabled)
-    let pulse2 = 0;
-    if (dualPulseEnabled) {
-      pulse2 = Math.sin(heartbeatPhase * Math.PI * 4 * pulseUpdateRate) * secondaryPulseIntensity;
-    }
-    
-    const heartbeatPulse = (pulse1 + pulse2) * 0.5 + 0.5;
-    
-    // Apply intensity range
-    const intensityRange = glowIntensityRange.max - glowIntensityRange.min;
-    const currentIntensity = glowIntensityRange.min + (heartbeatPulse * intensityRange);
-    
-    petalLayersRef.current.forEach((layer) => {
-      layer.forEach(petal => {
-        const baseColor = emotionColors[state.currentEmotion as keyof typeof emotionColors] || emotionColors["neutral"];
-        const hex = baseColor.replace('#', '');
-        const r = parseInt(hex.substr(0, 2), 16);
-        const g = parseInt(hex.substr(2, 2), 16);
-        const b = parseInt(hex.substr(4, 2), 16);
-        
-        const glowFactor = 1 + (heartbeatPulse * currentIntensity);
-        const glowR = Math.min(255, Math.floor(r * glowFactor));
-        const glowG = Math.min(255, Math.floor(g * glowFactor));
-        const glowB = Math.min(255, Math.floor(b * glowFactor));
-        
-        const glowColor = (glowR << 16) | (glowG << 8) | glowB;
-        (petal.material as THREE.MeshPhongMaterial).color.setHex(glowColor);
-        (petal.material as THREE.MeshPhongMaterial).emissive = new THREE.Color(glowColor);
-        (petal.material as THREE.MeshPhongMaterial).emissiveIntensity = heartbeatPulse * currentIntensity * 0.3;
-      });
-    });
-  };
-
-  // Fallback heartbeat animation when no mood params
-  const updateFallbackHeartbeat = () => {
-    const state = flowerStateRef.current;
-    const t = Date.now() * 0.001;
-    const heartbeatPeriod = 60 / 72; // Default 72 BPM
     const heartbeatPhase = (t % heartbeatPeriod) / heartbeatPeriod;
     
     const pulse1 = Math.sin(heartbeatPhase * Math.PI * 2);
     const pulse2 = Math.sin(heartbeatPhase * Math.PI * 4) * 0.3;
     const heartbeatPulse = (pulse1 + pulse2) * 0.5 + 0.5;
     
-    petalLayersRef.current.forEach((layer) => {
+    petalLayersRef.current.forEach((layer, layerIndex) => {
       layer.forEach(petal => {
-        const baseColor = emotionColors[state.currentEmotion as keyof typeof emotionColors] || emotionColors["neutral"];
+        const baseColor = emotionColors[effectiveEmotion as keyof typeof emotionColors] || emotionColors["neutral"];
         const hex = baseColor.replace('#', '');
         const r = parseInt(hex.substr(0, 2), 16);
         const g = parseInt(hex.substr(2, 2), 16);
         const b = parseInt(hex.substr(4, 2), 16);
         
-        const glowFactor = 1 + (heartbeatPulse * 0.4);
+        const glowFactor = 1 + (heartbeatPulse * state.heartbeatIntensity);
         const glowR = Math.min(255, Math.floor(r * glowFactor));
         const glowG = Math.min(255, Math.floor(g * glowFactor));
         const glowB = Math.min(255, Math.floor(b * glowFactor));
         
         const glowColor = (glowR << 16) | (glowG << 8) | glowB;
-        (petal.material as THREE.MeshPhongMaterial).color.setHex(glowColor);
-        (petal.material as THREE.MeshPhongMaterial).emissive = new THREE.Color(glowColor);
-        (petal.material as THREE.MeshPhongMaterial).emissiveIntensity = heartbeatPulse * 0.4 * 0.3;
+        petal.material.color.setHex(glowColor);
+        
+        // Add subtle emissive glow with hard cap
+        petal.material.emissive = new THREE.Color(glowColor);
+        const calculatedPetalGlow = heartbeatPulse * state.heartbeatIntensity * 0.15;
+        const maxPetalEmissiveIntensity = 0.2;
+        petal.material.emissiveIntensity = Math.min(calculatedPetalGlow, maxPetalEmissiveIntensity);
       });
     });
   };
 
-  // Legacy heartbeat function for backward compatibility
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const updateHeartbeatGlow = () => {
-    updateAdvancedHeartbeatGlow();
+  // Trading activity color system
+  const getTradingActivityColor = (activity: number) => {
+    const colors = {
+      low: 0xff4444,
+      mediumLow: 0xff8844,
+      medium: 0x2d5a27,
+      high: 0x4444ff
+    };
+    
+    const getDefaultColor = () => {
+      const emotionColor = emotionColors[effectiveEmotion as keyof typeof emotionColors] || emotionColors["neutral"];
+      const hex = emotionColor.replace('#', '');
+      const r = parseInt(hex.substr(0, 2), 16);
+      const g = parseInt(hex.substr(2, 2), 16);
+      const b = parseInt(hex.substr(4, 2), 16);
+      
+      const darkenFactor = 0.7;
+      const darkenedR = Math.floor(r * darkenFactor);
+      const darkenedG = Math.floor(g * darkenFactor);
+      const darkenedB = Math.floor(b * darkenFactor);
+      
+      return (darkenedR << 16) | (darkenedG << 8) | darkenedB;
+    };
+    
+    if (activity === undefined || activity === null) {
+      return getDefaultColor();
+    }
+    
+    let color1, color2, factor;
+    
+    if (activity < 0.25) {
+      color1 = getDefaultColor();
+      color2 = colors.low;
+      factor = activity / 0.25;
+    } else if (activity < 0.5) {
+      color1 = colors.low;
+      color2 = colors.mediumLow;
+      factor = (activity - 0.25) / 0.25;
+    } else if (activity < 0.75) {
+      color1 = colors.mediumLow;
+      color2 = colors.medium;
+      factor = (activity - 0.5) / 0.25;
+    } else {
+      color1 = colors.medium;
+      color2 = colors.high;
+      factor = (activity - 0.75) / 0.25;
+    }
+    
+    const r1 = (color1 >> 16) & 255;
+    const g1 = (color1 >> 8) & 255;
+    const b1 = color1 & 255;
+    
+    const r2 = (color2 >> 16) & 255;
+    const g2 = (color2 >> 8) & 255;
+    const b2 = color2 & 255;
+    
+    const r = Math.floor(r1 + (r2 - r1) * factor);
+    const g = Math.floor(g1 + (g2 - g1) * factor);
+    const b = Math.floor(b1 + (b2 - b1) * factor);
+    
+    return (r << 16) | (g << 8) | b;
   };
 
-  // Create bee
-  const createBee = () => {
-    if (beeRef.current) {
-      sceneRef.current?.remove(beeRef.current);
-      beeRef.current = null;
-    }
-    
-    const bee = new THREE.Group();
-    sceneRef.current?.add(bee);
-    beeRef.current = bee;
-    
-    // Body
-    const bodyGeom = new THREE.SphereGeometry(0.3, 16, 12);
-    bodyGeom.scale(1, 1, 1.8);
-    const bodyMat = new THREE.MeshStandardMaterial({color: 0xffd66b, roughness: 0.3, metalness: 0.1});
-    const body = new THREE.Mesh(bodyGeom, bodyMat);
-    body.castShadow = true;
-    bee.add(body);
-    
-    // Stripes
-    const stripeMat = new THREE.MeshStandardMaterial({color: 0x0a0a0a, roughness: 0.7});
-    for (let i = -1.0; i <= 1.0; i += 0.5) {
-      let bodyRadiusAtPosition;
-      if (i === 0) {
-        bodyRadiusAtPosition = 0.32;
-      } else if (Math.abs(i) === 1.0) {
-        bodyRadiusAtPosition = 0.26;
-      } else {
-        bodyRadiusAtPosition = 0.30;
-      }
+  const updateConnectorColor = () => {
+    if (connectorMeshRef.current) {
+      const newColor = getTradingActivityColor(flowerStateRef.current.tradingActivity);
+      connectorMeshRef.current.material.color.setHex(newColor);
+      connectorMeshRef.current.material.emissive.setHex(newColor);
       
-      const stripe = new THREE.Mesh(new THREE.CylinderGeometry(bodyRadiusAtPosition, bodyRadiusAtPosition, 0.02, 16), stripeMat);
-      stripe.rotation.x = Math.PI / 2;
-      stripe.position.z = i * 0.3;
-      stripe.scale.set(1, 1.8, 1);
-      body.add(stripe);
+      const calculatedGlowIntensity = 0.1 + (flowerStateRef.current.tradingActivity * 0.2);
+      const maxEmissiveIntensity = 0.25;
+      connectorMeshRef.current.material.emissiveIntensity = Math.min(calculatedGlowIntensity, maxEmissiveIntensity);
     }
+  };
+
+  // Generate flower with optimized parameters
+  const generateFlower = () => {
+    if (!sceneRef.current) return;
     
-    // Head
-    const head = new THREE.Mesh(
-      new THREE.SphereGeometry(0.18, 12, 10), 
-      new THREE.MeshStandardMaterial({color: 0x222222, roughness: 0.6})
-    );
-    head.position.set(0, 0.0, 0.7);
-    head.castShadow = true;
-    bee.add(head);
-    
-    // Eyes
-    const eyeGeom = new THREE.SphereGeometry(0.05, 8, 6);
-    const eyeMat = new THREE.MeshStandardMaterial({color: 0x111111});
-    const leftEye = new THREE.Mesh(eyeGeom, eyeMat);
-    leftEye.position.set(-0.08, 0.08, 0.85);
-    const rightEye = leftEye.clone();
-    rightEye.position.x = 0.08;
-    bee.add(leftEye, rightEye);
-    
-    // Antennae
-    function makeAntenna(side = 1) {
-      const geom = new THREE.CylinderGeometry(0.008, 0.008, 0.3, 6);
-      const mat = new THREE.MeshStandardMaterial({color: 0x111111});
-      const mesh = new THREE.Mesh(geom, mat);
-      mesh.rotation.z = side * 0.4;
-      mesh.rotation.x = 0.3;
-      mesh.position.set(side * -0.05, 0.2, 0.8);
-      return mesh;
-    }
-    bee.add(makeAntenna(1), makeAntenna(-1));
-    
-    // Wings
-    const wingMat = new THREE.MeshStandardMaterial({
-      color: 0xeef6ff, 
-      opacity: 0.6, 
-      transparent: true, 
-      side: THREE.DoubleSide, 
-      metalness: 0.0, 
-      roughness: 0.1
+    // Clear existing petal layers
+    petalLayersRef.current.forEach(layer => {
+      layer.forEach(mesh => {
+        sceneRef.current!.remove(mesh);
+      });
     });
+    petalLayersRef.current = [];
     
-    function createWingGeometry() {
-      const shape = new THREE.Shape();
-      shape.moveTo(0, 0);
-      shape.quadraticCurveTo(0.3, 0.1, 0.5, 0.2);
-      shape.quadraticCurveTo(0.6, 0.4, 0.5, 0.6);
-      shape.quadraticCurveTo(0.3, 0.7, 0, 0.6);
-      shape.quadraticCurveTo(-0.3, 0.7, -0.5, 0.6);
-      shape.quadraticCurveTo(-0.6, 0.4, -0.5, 0.2);
-      shape.quadraticCurveTo(-0.3, 0.1, 0, 0);
-      
-      const geometry = new THREE.ShapeGeometry(shape);
-      geometry.scale(0.4, 0.6, 1);
-      return geometry;
+    const state = flowerStateRef.current;
+    
+    // Initialize layer rotations and offsets arrays
+    state.layerRotations = new Array(state.layerCount).fill(0);
+    state.layerOffsets = new Array(state.layerCount).fill(0);
+    
+    // Set default offsets for natural staggering
+    for (let i = 0; i < state.layerCount; i++) {
+      state.layerOffsets[i] = (1 / state.layerCount) * i;
     }
     
-    function makeWing(side = 1, wingSet = 1) {
-      const wingGeom = createWingGeometry();
-      const mesh = new THREE.Mesh(wingGeom, wingMat);
+    // Generate layers
+    for (let layer = 0; layer < state.layerCount; layer++) {
+      const layerRadius = 12 - (layer * 2);
+      const layerColor = getEmotionColor(state.currentEmotion, layer);
       
-      const xOffset = side * (0.4 + (wingSet - 1) * 0.15);
-      const yOffset = 0.15 + (wingSet - 1) * 0.2;
-      const zOffset = 0.5;
-      
-      mesh.position.set(xOffset, yOffset, zOffset);
-      mesh.rotation.set(-.69, side * 0.4, 0.3);
-      
-      return mesh;
-    }
-    
-    const leftWing = makeWing(-.8, 1);
-    const rightWing = makeWing(.8, 1);
-    const leftWing2 = makeWing(-.9, 2);
-    const rightWing2 = makeWing(.9, 2);
-    
-    bee.add(leftWing, rightWing, leftWing2, rightWing2);
-    bee.userData.wings = [leftWing, rightWing, leftWing2, rightWing2];
-    
-    // Stinger
-    const stinger = new THREE.Mesh(
-      new THREE.ConeGeometry(0.04, 0.13, 8), 
-      new THREE.MeshStandardMaterial({color: 0x111111})
-    );
-    stinger.position.set(0, -0.15, -0.5);
-    stinger.rotation.x = Math.PI;
-    bee.add(stinger);
-    
-    // Legs
-    function createLegSet(legPosition = 0) {
-      const legSetGroup = new THREE.Group();
-      
-      function createCurvedLeg(side = 1, legPosition = 0) {
-        const legMat = new THREE.MeshStandardMaterial({color: 0x8B4513, roughness: 0.8});
-        
-        let curve;
-        if (legPosition === 2) {
-          curve = new THREE.CubicBezierCurve3(
-            new THREE.Vector3(0, 0, 0),
-            new THREE.Vector3(side * 0.13, -0.06, 0),
-            new THREE.Vector3(side * 0.1, -0.15, 0),
-            new THREE.Vector3(side * 0.1, -0.18, 0)
-          );
-        } else {
-          curve = new THREE.CubicBezierCurve3(
-            new THREE.Vector3(0, 0, 0),
-            new THREE.Vector3(side * 0.1, -0.05, 0),
-            new THREE.Vector3(side * 0.1, -0.12, 0),
-            new THREE.Vector3(side * 0.1, -0.15, 0)
-          );
-        }
-        
-        const legGeom = new THREE.TubeGeometry(curve, 8, 0.013, 6, false);
-        const legMesh = new THREE.Mesh(legGeom, legMat);
-        
-        const tipGeom = new THREE.ConeGeometry(0.015, 0.03, 6);
-        const tipMesh = new THREE.Mesh(tipGeom, legMat);
-        
-        const endPoint = curve.getPointAt(1);
-        tipMesh.position.copy(endPoint);
-        tipMesh.rotation.x = Math.PI;
-        
-        const legGroup = new THREE.Group();
-        legGroup.add(legMesh);
-        legGroup.add(tipMesh);
-        
-        return legGroup;
+      const petalMat = new THREE.MeshPhongMaterial({ color: layerColor, side: THREE.DoubleSide });
+      const petalGeom = new THREE.SphereGeometry(layerRadius, 20, 20, Math.PI / 3, Math.PI / 3, 0, Math.PI);
+      petalGeom.translate(0, -layerRadius, 0);
+      petalGeom.rotateX(Math.PI / 2);
+      const petalMesh = new THREE.Mesh(petalGeom, petalMat);
+
+      const layerMeshes = [];
+      for (let i = 0; i < state.petalCount; i++) {
+        layerMeshes[i] = petalMesh.clone();
+        sceneRef.current.add(layerMeshes[i]);
       }
-      
-      const leftLeg = createCurvedLeg(-1, legPosition);
-      const rightLeg = createCurvedLeg(1, legPosition);
-      legSetGroup.add(leftLeg, rightLeg);
-      
-      return legSetGroup;
+      petalLayersRef.current.push(layerMeshes);
     }
     
-    const frontLegSet = createLegSet(0);
-    frontLegSet.position.set(0, -0.28, -0.05);
-    bee.add(frontLegSet);
-    
-    const middleLegSet = createLegSet(1);
-    middleLegSet.position.set(0, -0.23, 0.15);
-    bee.add(middleLegSet);
-    
-    const rearLegSet = createLegSet(2);
-    rearLegSet.position.set(0, -0.18, 0.35);
-    bee.add(rearLegSet);
-    
-    updateBeeTransform();
+    createConnector();
+    createStalk();
+    createBee();
   };
 
-  // Update bee transform
-  const updateBeeTransform = () => {
-    if (beeRef.current) {
-      const state = flowerStateRef.current;
-      beeRef.current.position.set(state.beePosition.x, state.beePosition.y, state.beePosition.z);
-      beeRef.current.scale.setScalar(1.11);
-      beeRef.current.rotation.y = (state.beeRotation * Math.PI) / 180;
-    }
-  };
-
-  // Create connector
+  // Create connector with trading activity color
   const createConnector = () => {
+    if (!sceneRef.current) return;
+    
     if (connectorMeshRef.current) {
-      sceneRef.current?.remove(connectorMeshRef.current);
-      connectorMeshRef.current = null;
-    }
-    updateConnectorLength();
-  };
-
-  // Update connector length
-  const updateConnectorLength = () => {
-    if (connectorMeshRef.current) {
-      sceneRef.current?.remove(connectorMeshRef.current);
+      sceneRef.current.remove(connectorMeshRef.current);
       connectorMeshRef.current = null;
     }
     
     const petalCollisionY = calculatePetalCollisionY();
     const connectorLength = Math.max(0.5, (-4.2) - petalCollisionY - 1);
+    const connectorColor = getTradingActivityColor(flowerStateRef.current.tradingActivity);
     
     const connectorGeometry = new THREE.CylinderGeometry(2, 1.2, connectorLength, 16);
-    const connectorMaterial = new THREE.MeshPhongMaterial({
-      color: 0x2d5a27,
-      shininess: 10,
-      flatShading: false
+    const connectorMaterial = new THREE.MeshStandardMaterial({
+      color: connectorColor,
+      emissive: connectorColor,
+      emissiveIntensity: 0.1,
+      metalness: 0.1,
+      roughness: 0.3
     });
     connectorMeshRef.current = new THREE.Mesh(connectorGeometry, connectorMaterial);
     connectorMeshRef.current.position.y = -5.2 + (connectorLength / 2);
     connectorMeshRef.current.userData.isConnector = true;
-    sceneRef.current?.add(connectorMeshRef.current);
+    sceneRef.current.add(connectorMeshRef.current);
   };
 
-  // Calculate petal collision Y
   const calculatePetalCollisionY = () => {
     let lowestY = -12;
     
     petalLayersRef.current.forEach((layer, layerIndex) => {
       layer.forEach((petal) => {
-        const geometry = petal.geometry;
-        if (geometry.boundingBox === null) {
-          geometry.computeBoundingBox();
-        }
-        
+        const petalRadius = 12 - (layerIndex * 2);
         const worldPosition = new THREE.Vector3();
         petal.getWorldPosition(worldPosition);
-        
-        const petalRadius = 12 - (layerIndex * 2);
         const petalLowestY = worldPosition.y - petalRadius;
         
         if (petalLowestY < lowestY) {
@@ -573,10 +389,11 @@ export default function FlowerArt({
     return lowestY;
   };
 
-  // Create stalk
   const createStalk = () => {
+    if (!sceneRef.current) return;
+    
     if (stalkMeshRef.current) {
-      sceneRef.current?.remove(stalkMeshRef.current);
+      sceneRef.current.remove(stalkMeshRef.current);
       stalkMeshRef.current = null;
     }
     
@@ -625,8 +442,7 @@ export default function FlowerArt({
       let tn = offset + nfi;
       for (let i = 0; i < nt - 1; i++) {
         for (let j = 0; j < nfi - 1; j++) {
-          ind.push(t, tn, t + 1);
-          ind.push(tn, tn + 1, t + 1);
+          ind.push(t, tn, t + 1, tn, tn + 1, t + 1);
           t++;
           tn++;
         }
@@ -649,146 +465,205 @@ export default function FlowerArt({
       });
       
       stalkMeshRef.current = new THREE.Mesh(stalkGeometry, stalkMaterial);
-      sceneRef.current?.add(stalkMeshRef.current);
+      sceneRef.current.add(stalkMeshRef.current);
     }
   };
 
-  // Generate flower
-  const generateFlower = () => {
-    const state = flowerStateRef.current;
+  const createBee = () => {
+    if (!sceneRef.current) return;
     
-    console.log('Generating flower with state:', state);
-    
-    // Clear existing petal layers
-    petalLayersRef.current.forEach(layer => {
-      layer.forEach(mesh => {
-        sceneRef.current?.remove(mesh);
-      });
-    });
-    petalLayersRef.current = [];
-    
-    // Initialize layer rotations and offsets arrays
-    state.layerRotations = new Array(state.layerCount).fill(0);
-    state.layerOffsets = new Array(state.layerCount).fill(0);
-    
-    // Set default offsets for natural staggering
-    for (let i = 0; i < state.layerCount; i++) {
-      state.layerOffsets[i] = (1 / state.layerCount) * i;
+    if (beeRef.current) {
+      sceneRef.current.remove(beeRef.current);
+      beeRef.current = null;
     }
     
-    // Generate layers
-    for (let layer = 0; layer < state.layerCount; layer++) {
-      const layerRadius = 12 - (layer * 2);
-      const layerColor = getEmotionColor(state.currentEmotion, layer);
-      
-      const petalMat = new THREE.MeshPhongMaterial({color: layerColor, side: THREE.DoubleSide});
-      const petalGeom = new THREE.SphereGeometry(layerRadius, 20, 20, Math.PI / 3, Math.PI / 3, 0, Math.PI);
-      petalGeom.translate(0, -layerRadius, 0);
-      petalGeom.rotateX(Math.PI / 2);
-      const petalMesh = new THREE.Mesh(petalGeom, petalMat);
-
-      const layerMeshes = [];
-      for (let i = 0; i < state.petalCount; i++) {
-        layerMeshes[i] = petalMesh.clone();
-        sceneRef.current?.add(layerMeshes[i]);
+    const state = flowerStateRef.current;
+    beeRef.current = new THREE.Group();
+    sceneRef.current.add(beeRef.current);
+    
+    // Body
+    const bodyGeom = new THREE.SphereGeometry(0.3, 16, 12);
+    bodyGeom.scale(1, 1, 1.8);
+    const bodyMat = new THREE.MeshStandardMaterial({ color: 0xffd66b, roughness: 0.3, metalness: 0.1 });
+    const body = new THREE.Mesh(bodyGeom, bodyMat);
+    body.castShadow = true;
+    beeRef.current.add(body);
+    
+    // Stripes
+    const stripeMat = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.7 });
+    for (let i = -1.0; i <= 1.0; i += 0.5) {
+      let bodyRadiusAtPosition;
+      if (i === 0) {
+        bodyRadiusAtPosition = 0.32;
+      } else if (Math.abs(i) === 1.0) {
+        bodyRadiusAtPosition = 0.26;
+      } else {
+        bodyRadiusAtPosition = 0.30;
       }
-      petalLayersRef.current.push(layerMeshes);
       
-      console.log(`Created layer ${layer} with ${state.petalCount} petals`);
+      const stripe = new THREE.Mesh(new THREE.CylinderGeometry(bodyRadiusAtPosition, bodyRadiusAtPosition, 0.02, 16), stripeMat);
+      stripe.rotation.x = Math.PI / 2;
+      stripe.position.z = i * 0.3;
+      stripe.scale.set(1, 1.8, 1);
+      body.add(stripe);
     }
     
-    createConnector();
-    createStalk();
-    createBee();
-  };
-
-  // Update function
-  const update = () => {
-    const state = flowerStateRef.current;
+    // Head
+    const head = new THREE.Mesh(
+      new THREE.SphereGeometry(0.18, 12, 10),
+      new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.6 })
+    );
+    head.position.set(0, 0.0, 0.7);
+    head.castShadow = true;
+    beeRef.current.add(head);
     
-    // Debug: Log update calls (only every 60 frames to avoid spam)
-    if (Math.random() < 0.016) { // ~1/60 chance
-      console.log('Update called, petalLayers:', petalLayersRef.current.length);
-    }
+    // Eyes
+    const eyeGeom = new THREE.SphereGeometry(0.05, 8, 6);
+    const eyeMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+    const leftEye = new THREE.Mesh(eyeGeom, eyeMat);
+    leftEye.position.set(-0.08, 0.08, 0.85);
+    const rightEye = leftEye.clone();
+    rightEye.position.x = 0.08;
+    beeRef.current.add(leftEye, rightEye);
     
-    // Update mood-based rotation (with fallback)
-    updateAdvancedMoodRotation();
+    // Antennae
+    const makeAntenna = (side: number) => {
+      const geom = new THREE.CylinderGeometry(0.008, 0.008, 0.3, 6);
+      const mat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+      const mesh = new THREE.Mesh(geom, mat);
+      mesh.rotation.z = side * 0.4;
+      mesh.rotation.x = 0.3;
+      mesh.position.set(side * -0.05, 0.2, 0.8);
+      return mesh;
+    };
+    beeRef.current.add(makeAntenna(1), makeAntenna(-1));
     
-    // Update heartbeat glow effect (with fallback)
-    if (moodParams?.heartbeatParams) {
-      updateAdvancedHeartbeatGlow();
-    } else {
-      updateFallbackHeartbeat();
-    }
+    // Wings
+    const wingMat = new THREE.MeshStandardMaterial({
+      color: 0xeef6ff,
+      opacity: 0.6,
+      transparent: true,
+      side: THREE.DoubleSide,
+      metalness: 0.0,
+      roughness: 0.1
+    });
     
-    // Update all petal layers with individual rotations, offsets, and open/close animation
-    const rotationStep = Math.PI * 2 / state.petalCount;
-    const t = Date.now() * 0.001;
+    const createWingGeometry = () => {
+      const shape = new THREE.Shape();
+      shape.moveTo(0, 0);
+      shape.quadraticCurveTo(0.3, 0.1, 0.5, 0.2);
+      shape.quadraticCurveTo(0.6, 0.4, 0.5, 0.6);
+      shape.quadraticCurveTo(0.3, 0.7, 0, 0.6);
+      shape.quadraticCurveTo(-0.3, 0.7, -0.5, 0.6);
+      shape.quadraticCurveTo(-0.6, 0.4, -0.5, 0.2);
+      shape.quadraticCurveTo(-0.3, 0.1, 0, 0);
+      
+      const geometry = new THREE.ShapeGeometry(shape);
+      geometry.scale(0.4, 0.6, 1);
+      return geometry;
+    };
     
-    petalLayersRef.current.forEach((layer, layerIndex) => {
-      for (let i = 0; i < state.petalCount; i++) {
-        layer[i].rotation.set(0, 0, 0);
-        layer[i].rotateY((rotationStep * i) + (state.layerOffsets[layerIndex] * Math.PI * 2));
+    const makeWing = (side: number, wingSet: number) => {
+      const wingGeom = createWingGeometry();
+      const mesh = new THREE.Mesh(wingGeom, wingMat);
+      
+      const xOffset = side * (0.4 + (wingSet - 1) * 0.15);
+      const yOffset = 0.15 + (wingSet - 1) * 0.2;
+      const zOffset = 0.5;
+      
+      mesh.position.set(xOffset, yOffset, zOffset);
+      mesh.rotation.set(-.69, side * 0.4, 0.3);
+      
+      return mesh;
+    };
+    
+    const leftWing = makeWing(-.8, 1);
+    const rightWing = makeWing(.8, 1);
+    const leftWing2 = makeWing(-.9, 2);
+    const rightWing2 = makeWing(.9, 2);
+    
+    beeRef.current.add(leftWing, rightWing, leftWing2, rightWing2);
+    beeRef.current.userData.wings = [leftWing, rightWing, leftWing2, rightWing2];
+    
+    // Stinger
+    const stinger = new THREE.Mesh(
+      new THREE.ConeGeometry(0.04, 0.13, 8),
+      new THREE.MeshStandardMaterial({ color: 0x111111 })
+    );
+    stinger.position.set(0, -0.15, -0.5);
+    stinger.rotation.x = Math.PI;
+    beeRef.current.add(stinger);
+    
+    // Legs
+    const createLegSet = (legPosition: number) => {
+      const legSetGroup = new THREE.Group();
+      
+      const createCurvedLeg = (side: number, legPosition: number) => {
+        const legMat = new THREE.MeshStandardMaterial({ color: 0x8B4513, roughness: 0.8 });
         
-        // Debug: Log rotation values (only occasionally)
-        if (Math.random() < 0.001 && layerIndex === 0 && i === 0) {
-          console.log('Petal rotation:', {
-            layerIndex,
-            petalIndex: i,
-            rotationY: layer[i].rotation.y,
-            layerOffset: state.layerOffsets[layerIndex],
-            petalRotation: state.petalRotation
-          });
-        }
-        
-        // Petal open/close animation
-        let openCloseAngle = 0;
-        if (moodParams?.petalOpenCloseParams) {
-          const openCloseParams = moodParams.petalOpenCloseParams;
-          const openCloseSpeed = openCloseParams.openCloseSpeed || 1;
-          const baseAngle = Math.sin(t * openCloseSpeed) * 0.5 + 0.5; // 0 to 1
-          
-          if (openCloseParams.individualLayerControl && openCloseParams.layerOpenCloseRanges[layerIndex]) {
-            const range = openCloseParams.layerOpenCloseRanges[layerIndex];
-            openCloseAngle = range.min + (baseAngle * (range.max - range.min));
-          } else {
-            openCloseAngle = openCloseParams.minOpenAngle + (baseAngle * (openCloseParams.maxOpenAngle - openCloseParams.minOpenAngle));
-          }
+        let curve;
+        if (legPosition === 2) {
+          curve = new THREE.CubicBezierCurve3(
+            new THREE.Vector3(0, 0, 0),
+            new THREE.Vector3(side * 0.13, -0.06, 0),
+            new THREE.Vector3(side * 0.1, -0.15, 0),
+            new THREE.Vector3(side * 0.1, -0.18, 0)
+          );
         } else {
-          // Fallback petal open/close animation
-          const openCloseSpeed = 1.5;
-          const baseAngle = Math.sin(t * openCloseSpeed) * 0.5 + 0.5;
-          openCloseAngle = 0.1 + (baseAngle * 0.2); // Subtle open/close effect
+          curve = new THREE.CubicBezierCurve3(
+            new THREE.Vector3(0, 0, 0),
+            new THREE.Vector3(side * 0.1, -0.05, 0),
+            new THREE.Vector3(side * 0.1, -0.12, 0),
+            new THREE.Vector3(side * 0.1, -0.15, 0)
+          );
         }
         
-        layer[i].rotateX((Math.PI / 2) * (state.petalRotation + state.layerRotations[layerIndex] + openCloseAngle));
-      }
-    });
+        const legGeom = new THREE.TubeGeometry(curve, 8, 0.013, 6, false);
+        const legMesh = new THREE.Mesh(legGeom, legMat);
+        
+        const tipGeom = new THREE.ConeGeometry(0.015, 0.03, 6);
+        const tipMesh = new THREE.Mesh(tipGeom, legMat);
+        
+        const endPoint = curve.getPointAt(1);
+        tipMesh.position.copy(endPoint);
+        tipMesh.rotation.x = Math.PI;
+        
+        const legGroup = new THREE.Group();
+        legGroup.add(legMesh);
+        legGroup.add(tipMesh);
+        
+        return legGroup;
+      };
+      
+      const leftLeg = createCurvedLeg(-1, legPosition);
+      const rightLeg = createCurvedLeg(1, legPosition);
+      legSetGroup.add(leftLeg);
+      legSetGroup.add(rightLeg);
+      
+      return legSetGroup;
+    };
     
-    // Update connector length based on petal positions
-    updateConnectorLength();
+    const frontLegSet = createLegSet(0);
+    frontLegSet.position.set(0, -0.28, -0.05);
+    beeRef.current.add(frontLegSet);
     
-    // Update bee animation
-    if (beeRef.current && beeRef.current.userData.wings) {
-      const t = Date.now() * 0.001;
-      
-      // Flight movement
-      beeRef.current.position.y = state.beePosition.y + Math.sin(t * 1.2) * 0.08;
-      
-      const manualRotation = (state.beeRotation * Math.PI) / 180;
-      const animationRotation = Math.sin(t * 0.3) * 0.08;
-      beeRef.current.rotation.y = manualRotation + animationRotation;
-      
-      // Wing flapping
-      const wingAngle = Math.sin(t * state.wingSpeed) * 0.9 + 0.5;
-      const wings = beeRef.current.userData.wings;
-      
-      wings[0].rotation.z = -wingAngle * 0.6 + 0.4;
-      wings[1].rotation.z = wingAngle * 0.6 - 0.4;
-      
-      const backWingAngle = Math.sin(t * state.wingSpeed + 0.2) * 0.9 + 0.5;
-      wings[2].rotation.z = -backWingAngle * 0.6 + 0.4;
-      wings[3].rotation.z = backWingAngle * 0.6 - 0.4;
+    const middleLegSet = createLegSet(1);
+    middleLegSet.position.set(0, -0.23, 0.15);
+    beeRef.current.add(middleLegSet);
+    
+    const rearLegSet = createLegSet(2);
+    rearLegSet.position.set(0, -0.18, 0.35);
+    beeRef.current.add(rearLegSet);
+    
+    updateBeeTransform();
+  };
+
+  const updateBeeTransform = () => {
+    if (beeRef.current) {
+      const state = flowerStateRef.current;
+      beeRef.current.position.set(state.beePosition.x, state.beePosition.y, state.beePosition.z);
+      beeRef.current.scale.setScalar(1.11);
+      beeRef.current.rotation.y = (state.beeRotation * Math.PI) / 180;
     }
   };
 
@@ -796,136 +671,122 @@ export default function FlowerArt({
   useEffect(() => {
     if (!containerRef.current) return;
     
-    // Prevent multiple initializations
-    if (sceneRef.current && rendererRef.current) {
-      console.log('Scene already exists, skipping initialization');
-      return;
-    }
-    
-    // Clear any existing content first
+    // Clear container
     containerRef.current.innerHTML = '';
-
-    // Update state with new props
-    flowerStateRef.current = {
-      ...flowerStateRef.current,
-      petalCount: effectivePetalCount,
-      layerCount: effectiveLayerCount,
-      currentEmotion: effectiveEmotion,
-      moodRotationSpeed: effectiveRotationSpeed,
-      moodRotationDirection: effectiveRotationDirection,
-      heartbeatBPM: effectiveHeartbeatBPM,
-      heartbeatIntensity: effectiveHeartbeatIntensity,
-      petalRotation: effectivePetalRotation,
-      layerRotations: effectiveLayerRotations,
-      layerOffsets: effectiveLayerOffsets,
-      stalkLength: effectiveStalkLength,
-      beePosition: effectiveBeePosition,
-      wingSpeed: effectiveWingSpeed
-    };
-
-    // Scene setup
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x000000);
-    sceneRef.current = scene;
-
-    // Camera
-    const camera = new THREE.PerspectiveCamera(40, size / size, 0.1, 1000);
-    camera.position.set(0, 50, 120);
-
-    // Lights
+    
+    // Create scene
+    sceneRef.current = new THREE.Scene();
+    sceneRef.current.background = new THREE.Color(0x000000);
+    
+    // Create camera
+    const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 1000);
+    camera.position.set(0, 70, 140);
+    
+    // Create lights
     const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
     dirLight.position.set(20, 10, 30);
     dirLight.castShadow = true;
     const hemLight = new THREE.HemisphereLight(0xffffbb, 0x080820, 2);
-    scene.add(dirLight, hemLight);
-
-    // Renderer
-    const renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
-    renderer.setSize(size, size);
-    renderer.setPixelRatio(window.devicePixelRatio > 1 ? 2 : 1);
-    // renderer.physicallyCorrectLights = true; // Removed for compatibility
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.autoUpdate = false;
-    rendererRef.current = renderer;
-
-    // Ensure only one canvas is added
-    if (containerRef.current.children.length === 0) {
-      containerRef.current.appendChild(renderer.domElement);
-      console.log('Canvas added to container. Total children:', containerRef.current.children.length);
-    } else {
-      console.log('Canvas already exists. Total children:', containerRef.current.children.length);
-    }
-
-    // Controls
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.target.set(0, 0, 0);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    controls.enableZoom = true;
-    controls.enablePan = true;
-    controls.enableRotate = true;
-    controls.minDistance = 50;
-    controls.maxDistance = 300;
-    controls.update();
+    sceneRef.current.add(dirLight, hemLight);
     
-    // Store controls reference for updates
-    controlsRef.current = controls;
+    // Create renderer
+    rendererRef.current = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    rendererRef.current.setSize(size, size);
+    rendererRef.current.setPixelRatio(window.devicePixelRatio > 1 ? 2 : 1);
+    rendererRef.current.shadowMap.enabled = true;
+    rendererRef.current.shadowMap.autoUpdate = false;
     
-    // Debug: Log controls setup
-    console.log('OrbitControls created:', {
-      enabled: controls.enabled,
-      enableZoom: controls.enableZoom,
-      enablePan: controls.enablePan,
-      enableRotate: controls.enableRotate,
-      target: controls.target
-    });
-
-    // Initialize flower
+    containerRef.current.appendChild(rendererRef.current.domElement);
+    
+    // Create controls
+    controlsRef.current = new OrbitControls(camera, rendererRef.current.domElement);
+    controlsRef.current.target.set(0, 0, 0);
+    controlsRef.current.update();
+    
+    // Initialize systems
     calculateMoodRotation();
+    calculateHeartbeatBPM();
     generateFlower();
     
-    // Debug: Check if flower was created
-    console.log('Flower generated:', {
-      petalLayers: petalLayersRef.current.length,
-      sceneChildren: scene.children.length,
-      state: flowerStateRef.current
-    });
-
     // Animation loop
     const animate = () => {
       animationIdRef.current = requestAnimationFrame(animate);
-      update();
-      controlsRef.current?.update();
-      renderer.render(scene, camera);
+      
+      updateMoodRotation();
+      updateHeartbeatGlow();
+      updateConnectorColor();
+      
+      // Update petal rotations with constraints
+      const state = flowerStateRef.current;
+      petalLayersRef.current.forEach((layer, layerIndex) => {
+        for (let i = 0; i < state.petalCount; i++) {
+          layer[i].rotation.set(0, 0, 0);
+          const rotationStep = Math.PI * 2 / state.petalCount;
+          layer[i].rotateY((rotationStep * i) + (state.layerOffsets[layerIndex] * Math.PI * 2));
+          
+          // Apply rotation constraints to prevent erratic behavior
+          const globalRotation = state.petalRotation * 0.5;
+          const individualRotation = state.layerRotations[layerIndex];
+          const totalRotation = globalRotation + individualRotation;
+          const totalDegrees = totalRotation * 180 / Math.PI;
+          
+          // Constrain total rotation to safe range (0 to 120 degrees) - NO NEGATIVE VALUES
+          let constrainedRotation = totalRotation;
+          if (totalDegrees > 120) {
+            constrainedRotation = 120 * Math.PI / 180;
+          } else if (totalDegrees < 0) {
+            constrainedRotation = 0;
+          }
+          
+          layer[i].rotateX((Math.PI / 2) * (constrainedRotation * 2));
+        }
+      });
+      
+      // Update bee animation
+      if (beeRef.current && beeRef.current.userData.wings) {
+        const t = Date.now() * 0.001;
+        
+        beeRef.current.position.y = state.beePosition.y + Math.sin(t * 1.2) * 0.08;
+        
+        const manualRotation = (state.beeRotation * Math.PI) / 180;
+        const animationRotation = Math.sin(t * 0.3) * 0.08;
+        beeRef.current.rotation.y = manualRotation + animationRotation;
+        
+        const wingAngle = Math.sin(t * state.wingSpeed) * 0.9 + 0.5;
+        const wings = beeRef.current.userData.wings;
+        
+        wings[0].rotation.z = -wingAngle * 0.6 + 0.4;
+        wings[1].rotation.z = wingAngle * 0.6 - 0.4;
+        
+        const backWingAngle = Math.sin(t * state.wingSpeed + 0.2) * 0.9 + 0.5;
+        wings[2].rotation.z = -backWingAngle * 0.6 + 0.4;
+        wings[3].rotation.z = backWingAngle * 0.6 - 0.4;
+      }
+      
+      // Render
+      rendererRef.current.render(sceneRef.current, camera);
     };
     
-    // Debug: Log animation start
-    console.log('Starting animation loop');
     animate();
-
+    
     // Cleanup
     return () => {
       if (animationIdRef.current) {
         cancelAnimationFrame(animationIdRef.current);
       }
+      if (rendererRef.current) {
+        rendererRef.current.dispose();
+      }
       if (controlsRef.current) {
         controlsRef.current.dispose();
       }
-      if (renderer) {
-        renderer.dispose();
-        const container = containerRef.current;
-        if (container) {
-          container.innerHTML = '';
-        }
-      }
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [moodParams, emotion, petalCount, layerCount, heartbeatBPM, heartbeatIntensity, rotationSpeed, rotationDirection, size]);
+  }, [size, effectiveEmotion, effectivePetalCount, effectiveLayerCount, effectiveHeartbeatBPM, effectiveHeartbeatIntensity, effectiveRotationSpeed, effectiveRotationDirection, effectiveStalkLength, effectiveBeePosition, effectiveWingSpeed, effectivePetalRotation, effectiveLayerRotations, effectiveLayerOffsets, effectiveTradingActivity]);
 
   return (
     <div 
       ref={containerRef} 
-      className={`${className}`}
+      className={className}
       style={{ 
         width: size, 
         height: size,
