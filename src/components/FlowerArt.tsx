@@ -46,8 +46,6 @@ export default function FlowerArt({
   rotationSpeed = 0.2,
   rotationDirection = 1,
   size = 300,
-  interactive = false,
-  onMoodChange,
   className = ''
 }: FlowerArtProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -196,7 +194,7 @@ export default function FlowerArt({
     const pulse2 = Math.sin(heartbeatPhase * Math.PI * 4) * 0.3;
     const heartbeatPulse = (pulse1 + pulse2) * 0.5 + 0.5;
     
-    petalLayersRef.current.forEach((layer, layerIndex) => {
+    petalLayersRef.current.forEach((layer) => {
       layer.forEach(petal => {
         const baseColor = emotionColors[effectiveEmotion as keyof typeof emotionColors] || emotionColors["neutral"];
         const hex = baseColor.replace('#', '');
@@ -477,7 +475,6 @@ export default function FlowerArt({
       beeRef.current = null;
     }
     
-    const state = flowerStateRef.current;
     beeRef.current = new THREE.Group();
     sceneRef.current.add(beeRef.current);
     
@@ -669,10 +666,11 @@ export default function FlowerArt({
 
   // Initialize scene
   useEffect(() => {
-    if (!containerRef.current) return;
+    const container = containerRef.current;
+    if (!container) return;
     
     // Clear container
-    containerRef.current.innerHTML = '';
+    container.innerHTML = '';
     
     // Create scene
     sceneRef.current = new THREE.Scene();
@@ -696,7 +694,7 @@ export default function FlowerArt({
     rendererRef.current.shadowMap.enabled = true;
     rendererRef.current.shadowMap.autoUpdate = false;
     
-    containerRef.current.appendChild(rendererRef.current.domElement);
+    container.appendChild(rendererRef.current.domElement);
     
     // Create controls
     controlsRef.current = new OrbitControls(camera, rendererRef.current.domElement);

@@ -155,7 +155,7 @@ export const useShapesOfMindContract = () => {
             isAnimated: flowerData.isAnimated,
           });
         }
-      } catch (err) {
+      } catch (err: unknown) {
         console.error(`Failed to fetch flower data for token ${tokenId}:`, err);
       }
     }
@@ -211,7 +211,7 @@ export const useFlowerData = (tokenId: number) => {
 
 // Utility function to get mood name from value
 export const getMoodName = (moodValue: number): MoodType | 'Unknown' => {
-  const moodEntry = Object.entries(MOOD_VALUES).find(([_, value]) => value === moodValue);
+  const moodEntry = Object.entries(MOOD_VALUES).find(([, value]) => value === moodValue);
   return moodEntry ? (moodEntry[0] as MoodType) : 'Unknown';
 };
 
