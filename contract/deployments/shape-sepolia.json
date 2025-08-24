@@ -1,0 +1,15 @@
+{
+  "contractAddress": "0x5Fb9310C998cC608226316F521D6d25E97E4B78A",
+  "network": "shape-sepolia",
+  "deployer": "0x7Bc9427C8730b87Ab3faD10DA63F0C4b9e9E0A5F",
+  "deploymentTime": "2025-08-24T09:43:14.418Z",
+  "constructorArgs": [],
+  "contractName": "ShapeL2FlowerMoodJournal",
+  "features": {
+    "maxSupply": "1111",
+    "basePrice": "0.0069",
+    "introPrice": "0.0042",
+    "beeEnabled": true,
+    "communityInfluence": true
+  }
+}

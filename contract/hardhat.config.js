@@ -1,3 +1,4 @@
+require('dotenv').config();
 require("@nomicfoundation/hardhat-toolbox");
 require("hardhat-gas-reporter");
 require("solidity-coverage");
@@ -15,19 +16,12 @@ module.exports = {
     },
   },
   networks: {
-    // Shape L2 Testnet
-    "shape-l2-testnet": {
-      url: "https://testnet-rpc.shape-l2.com", // Replace with actual Shape L2 testnet RPC
+    // Shape Sepolia (Alchemy)
+    "shape-sepolia": {
+      url: `https://shape-sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_KEY || process.env.NEXT_PUBLIC_ALCHEMY_KEY || ''}`,
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      chainId: 1234, // Replace with actual Shape L2 testnet chain ID
-      gasPrice: 1000000000, // 1 gwei
-    },
-    // Shape L2 Mainnet
-    "shape-l2-mainnet": {
-      url: "https://rpc.shape-l2.com", // Replace with actual Shape L2 mainnet RPC
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      chainId: 5678, // Replace with actual Shape L2 mainnet chain ID
-      gasPrice: 1000000000, // 1 gwei
+      chainId: 11011,
+      gasPrice: 1000000000,
     },
     // Local development
     hardhat: {
@@ -46,24 +40,15 @@ module.exports = {
   },
   etherscan: {
     apiKey: {
-      "shape-l2-mainnet": process.env.SHAPE_L2_API_KEY || "",
-      "shape-l2-testnet": process.env.SHAPE_L2_API_KEY || "",
+      "shape-sepolia": process.env.SHAPE_L2_API_KEY || "",
     },
     customChains: [
       {
-        network: "shape-l2-mainnet",
-        chainId: 5678, // Replace with actual chain ID
+        network: "shape-sepolia",
+        chainId: 11011,
         urls: {
-          apiURL: "https://explorer.shape-l2.com/api", // Replace with actual explorer API
-          browserURL: "https://explorer.shape-l2.com", // Replace with actual explorer URL
-        },
-      },
-      {
-        network: "shape-l2-testnet",
-        chainId: 1234, // Replace with actual chain ID
-        urls: {
-          apiURL: "https://testnet-explorer.shape-l2.com/api", // Replace with actual testnet explorer API
-          browserURL: "https://testnet-explorer.shape-l2.com", // Replace with actual testnet explorer URL
+          apiURL: "https://explorer-sepolia.shape.network/api",
+          browserURL: "https://explorer-sepolia.shape.network",
         },
       },
     ],

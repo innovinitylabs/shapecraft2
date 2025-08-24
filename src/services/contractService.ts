@@ -1,17 +1,16 @@
 'use client';
 
-import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useBalance } from 'wagmi';
-import { 
-  contractConfig, 
-  EMOTION_CODES, 
-  EmotionType,
-  MoodClassifierResponse,
-  UserMoodHistory,
-  UserRanking,
-  StreakFeatures,
-  CommunityStats
-} from '@/lib/contract';
-import { useState } from 'react';
+import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { SHAPE_L2_FLOWER_ABI, EMOTION_CODES, EmotionType } from '@/lib/contract';
+import { useAccount } from 'wagmi';
+
+// Get environment variables with fallbacks
+const getEnvVar = (key: string, fallback: string) => {
+  if (typeof window === 'undefined') return fallback;
+  return process.env[key] || fallback;
+};
+
+const contractAddress = getEnvVar('NEXT_PUBLIC_CONTRACT_ADDRESS', '0x0000000000000000000000000000000000000000') as `0x${string}`;
 
 export interface MintFlowerParams {
   emotion: EmotionType;
@@ -22,63 +21,52 @@ export interface MintFlowerParams {
 }
 
 export interface RecordMoodParams {
+  tokenId: number;
   emotion: EmotionType;
   confidence: number;
   probabilities: number[];
   entropy: number;
   gap: number;
-  nftId: number;
 }
 
-export const useShapeL2FlowerContract = () => {
-  const { address, isConnected } = useAccount();
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // Get user's balance
-  const { data: balance } = useBalance({
-    address,
-  });
+export function useShapeL2FlowerContract() {
+  const { address } = useAccount();
 
   // Get current mint price
   const { data: currentMintPrice } = useReadContract({
-    ...contractConfig,
+    address: contractAddress,
+    abi: SHAPE_L2_FLOWER_ABI,
     functionName: 'getCurrentMintPrice',
   });
 
   // Get user's mood history
   const { data: userMoodHistory, refetch: refetchMoodHistory } = useReadContract({
-    ...contractConfig,
+    address: contractAddress,
+    abi: SHAPE_L2_FLOWER_ABI,
     functionName: 'getUserMoodHistory',
     args: address ? [address] : undefined,
-    query: {
-      enabled: !!address,
-    },
   });
 
   // Get user's ranking
   const { data: userRanking, refetch: refetchUserRanking } = useReadContract({
-    ...contractConfig,
+    address: contractAddress,
+    abi: SHAPE_L2_FLOWER_ABI,
     functionName: 'getUserRanking',
     args: address ? [address] : undefined,
-    query: {
-      enabled: !!address,
-    },
   });
 
   // Get user's streak features
   const { data: streakFeatures, refetch: refetchStreakFeatures } = useReadContract({
-    ...contractConfig,
+    address: contractAddress,
+    abi: SHAPE_L2_FLOWER_ABI,
     functionName: 'getStreakFeatures',
     args: address ? [address] : undefined,
-    query: {
-      enabled: !!address,
-    },
   });
 
   // Get community stats
   const { data: communityStats, refetch: refetchCommunityStats } = useReadContract({
-    ...contractConfig,
+    address: contractAddress,
+    abi: SHAPE_L2_FLOWER_ABI,
     functionName: 'getCommunityStats',
   });
 
@@ -92,129 +80,90 @@ export const useShapeL2FlowerContract = () => {
   const { writeContract: claimGasback, data: claimData, isPending: isClaiming } = useWriteContract();
 
   // Wait for mint transaction
-  const { isLoading: isMintLoading, isSuccess: isMintSuccess } = useWaitForTransactionReceipt({
+  const { isLoading: isMintConfirming, isSuccess: isMintSuccess } = useWaitForTransactionReceipt({
     hash: mintData,
   });
 
   // Wait for record mood transaction
-  const { isLoading: isRecordLoading, isSuccess: isRecordSuccess } = useWaitForTransactionReceipt({
+  const { isLoading: isRecordConfirming, isSuccess: isRecordSuccess } = useWaitForTransactionReceipt({
     hash: recordData,
   });
 
-  // Wait for claim transaction
-  const { isLoading: isClaimLoading, isSuccess: isClaimSuccess } = useWaitForTransactionReceipt({
+  // Wait for claim gasback transaction
+  const { isLoading: isClaimConfirming, isSuccess: isClaimSuccess } = useWaitForTransactionReceipt({
     hash: claimData,
   });
 
-  // Mint a new flower NFT
   const mintNewFlower = async (params: MintFlowerParams) => {
-    if (!address || !isConnected) {
-      setError('Wallet not connected');
-      return;
+    if (!address) {
+      throw new Error('Wallet not connected');
     }
-
-    if (!currentMintPrice) {
-      setError('Unable to get mint price');
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
 
     try {
-      const emotionCode = EMOTION_CODES[params.emotion];
-      const confidenceValue = Math.round(params.confidence * 100); // Convert to 0-10000 range
-      const probabilitiesArray = params.probabilities.slice(0, 5).map(p => Math.round(p * 100)); // Convert to 0-100 range
-      
-      // Pad probabilities array to 5 elements
-      while (probabilitiesArray.length < 5) {
-        probabilitiesArray.push(0);
-      }
-
       mintFlower({
-        ...contractConfig,
+        address: contractAddress,
+        abi: SHAPE_L2_FLOWER_ABI,
         functionName: 'mintFlowerNFT',
         args: [
-          emotionCode,
-          confidenceValue,
-          probabilitiesArray as [number, number, number, number, number],
-          Math.round(params.entropy),
-          Math.round(params.gap)
+          EMOTION_CODES[params.emotion],
+          Math.round(params.confidence * 100),
+          params.probabilities.slice(0, 5).map(p => Math.round(p * 100)) as [number, number, number, number, number],
+          Math.round(params.entropy * 100),
+          Math.round(params.gap * 100)
         ],
-        value: currentMintPrice,
       });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to mint flower');
-    } finally {
-      setIsLoading(false);
+    } catch (error) {
+      console.error('Error minting flower:', error);
+      throw error;
     }
   };
 
-  // Record mood for existing NFT
   const recordMoodForNFT = async (params: RecordMoodParams) => {
-    if (!address || !isConnected) {
-      setError('Wallet not connected');
-      return;
+    if (!address) {
+      throw new Error('Wallet not connected');
     }
-
-    setIsLoading(true);
-    setError(null);
 
     try {
-      const emotionCode = EMOTION_CODES[params.emotion];
-      const confidenceValue = Math.round(params.confidence * 100); // Convert to 0-10000 range
-      const probabilitiesArray = params.probabilities.slice(0, 5).map(p => Math.round(p * 100)); // Convert to 0-100 range
-      
-      // Pad probabilities array to 5 elements
-      while (probabilitiesArray.length < 5) {
-        probabilitiesArray.push(0);
-      }
-
       recordMood({
-        ...contractConfig,
+        address: contractAddress,
+        abi: SHAPE_L2_FLOWER_ABI,
         functionName: 'recordMood',
         args: [
-          emotionCode,
-          confidenceValue,
-          probabilitiesArray as [number, number, number, number, number],
-          Math.round(params.entropy),
-          Math.round(params.gap),
-          params.nftId
+          EMOTION_CODES[params.emotion],
+          Math.round(params.confidence * 100),
+          params.probabilities.slice(0, 5).map(p => Math.round(p * 100)) as [number, number, number, number, number],
+          Math.round(params.entropy * 100),
+          Math.round(params.gap * 100),
+          params.tokenId
         ],
       });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to record mood');
-    } finally {
-      setIsLoading(false);
+    } catch (error) {
+      console.error('Error recording mood:', error);
+      throw error;
     }
   };
 
-  // Claim gasback
   const claimUserGasback = async () => {
-    if (!address || !isConnected) {
-      setError('Wallet not connected');
-      return;
+    if (!address) {
+      throw new Error('Wallet not connected');
     }
-
-    setIsLoading(true);
-    setError(null);
 
     try {
       claimGasback({
-        ...contractConfig,
+        address: contractAddress,
+        abi: SHAPE_L2_FLOWER_ABI,
         functionName: 'claimGasback',
       });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to claim gasback');
-    } finally {
-      setIsLoading(false);
+    } catch (error) {
+      console.error('Error claiming gasback:', error);
+      throw error;
     }
   };
 
-  // Convert mood classifier response to contract params
-  const convertMoodClassifierToContractParams = (response: MoodClassifierResponse): MintFlowerParams => {
+  // Helper function to convert mood classifier response to contract parameters
+  const convertMoodClassifierToContractParams = (response: any): MintFlowerParams => {
     return {
-      emotion: response.emotion.toLowerCase() as EmotionType,
+      emotion: response.emotion as EmotionType,
       confidence: response.confidence,
       probabilities: response.probabilities,
       entropy: response.entropy,
@@ -222,75 +171,64 @@ export const useShapeL2FlowerContract = () => {
     };
   };
 
-  // Check if user can record mood (24h limit)
-  const canRecordMood = (): boolean => {
-    if (!userMoodHistory) return true;
+  // Check if user can record mood (24h cooldown)
+  const canRecordMood = () => {
+    if (!userMoodHistory || !userMoodHistory[0] || userMoodHistory[0].length === 0) return true;
     
-    const lastEntry = userMoodHistory[0]?.[userMoodHistory[0].length - 1];
-    if (!lastEntry) return true;
-
-    const lastEntryTime = Number(lastEntry.ts);
+    const lastEntry = userMoodHistory[0][userMoodHistory[0].length - 1];
+    const lastTimestamp = Number(lastEntry.ts);
     const currentTime = Math.floor(Date.now() / 1000);
-    const timeDiff = currentTime - lastEntryTime;
-    const oneDay = 24 * 60 * 60; // 24 hours in seconds
-
-    return timeDiff >= oneDay;
+    const cooldownPeriod = 24 * 60 * 60; // 24 hours in seconds
+    
+    return currentTime - lastTimestamp >= cooldownPeriod;
   };
 
-  // Get time until next mood recording
-  const getTimeUntilNextMood = (): string => {
-    if (!userMoodHistory) return '0 hours';
-
-    const lastEntry = userMoodHistory[0]?.[userMoodHistory[0].length - 1];
-    if (!lastEntry) return '0 hours';
-
-    const lastEntryTime = Number(lastEntry.ts);
+  // Get time until next mood can be recorded
+  const getTimeUntilNextMood = () => {
+    if (!userMoodHistory || !userMoodHistory[0] || userMoodHistory[0].length === 0) return 0;
+    
+    const lastEntry = userMoodHistory[0][userMoodHistory[0].length - 1];
+    const lastTimestamp = Number(lastEntry.ts);
     const currentTime = Math.floor(Date.now() / 1000);
-    const timeDiff = lastEntryTime + (24 * 60 * 60) - currentTime;
-
-    if (timeDiff <= 0) return '0 hours';
-
-    const hours = Math.floor(timeDiff / 3600);
-    const minutes = Math.floor((timeDiff % 3600) / 60);
-
-    return `${hours}h ${minutes}m`;
+    const cooldownPeriod = 24 * 60 * 60; // 24 hours in seconds
+    const timeRemaining = cooldownPeriod - (currentTime - lastTimestamp);
+    
+    return Math.max(0, timeRemaining);
   };
 
   return {
-    // State
-    address,
-    isConnected,
-    isLoading,
-    error,
-    balance,
+    // Read data
     currentMintPrice,
-
-    // Data
     userMoodHistory,
     userRanking,
     streakFeatures,
     communityStats,
-
-    // Transaction states
-    isMinting: isMinting || isMintLoading,
-    isMintSuccess,
-    isRecording: isRecording || isRecordLoading,
-    isRecordSuccess,
-    isClaiming: isClaiming || isClaimLoading,
-    isClaimSuccess,
-
-    // Functions
+    
+    // Write functions
     mintNewFlower,
     recordMoodForNFT,
     claimUserGasback,
+    
+    // Helper functions
     convertMoodClassifierToContractParams,
     canRecordMood,
     getTimeUntilNextMood,
-
+    
+    // Loading states
+    isMinting,
+    isMintConfirming,
+    isMintSuccess,
+    isRecording,
+    isRecordConfirming,
+    isRecordSuccess,
+    isClaiming,
+    isClaimConfirming,
+    isClaimSuccess,
+    
     // Refetch functions
     refetchMoodHistory,
     refetchUserRanking,
     refetchStreakFeatures,
     refetchCommunityStats,
   };
-};
+}

@@ -11,18 +11,18 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { toast } from 'react-hot-toast';
 
 export default function MintPage() {
+  const hasWalletConnect =
+    typeof process !== 'undefined' &&
+    typeof process.env !== 'undefined' &&
+    !!process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID &&
+    process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID !== 'demo' &&
+    process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID !== 'demo_project_id';
   const [moodParams, setMoodParams] = useState<FlowerArtParameters | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [mintStep, setMintStep] = useState<'input' | 'preview' | 'mint'>('input');
   const [showRawData, setShowRawData] = useState(false);
-  const [userText, setUserText] = useState('');
 
   const {
-    address,
-    isConnected,
-    isLoading: contractLoading,
-    error: contractError,
-    balance,
     currentMintPrice,
     userMoodHistory,
     canRecordMood,
@@ -86,7 +86,7 @@ export default function MintPage() {
 
       await recordMoodForNFT({
         ...contractParams,
-        nftId,
+        tokenId: nftId,
       });
 
       toast.success('Recording your mood...');
@@ -119,21 +119,13 @@ export default function MintPage() {
     }
   }, [isRecordSuccess]);
 
-  // Handle contract errors
-  useEffect(() => {
-    if (contractError) {
-      toast.error(contractError);
-    }
-  }, [contractError]);
-
   const formatPrice = (price: bigint | undefined) => {
     if (!price) return '0 ETH';
     return `${Number(price) / 1e18} ETH`;
   };
 
-  const formatBalance = (balance: bigint | undefined) => {
-    if (!balance) return '0 ETH';
-    return `${Number(balance) / 1e18} ETH`;
+  const fmt = (n: number | undefined | null, digits: number = 1) => {
+    return typeof n === 'number' && Number.isFinite(n) ? n.toFixed(digits) : '-';
   };
 
   return (
@@ -163,59 +155,61 @@ export default function MintPage() {
       <div className="relative z-10 mb-8">
         <div className="container mx-auto px-4">
           <div className="flex justify-center">
-            <ConnectButton />
+            {hasWalletConnect ? (
+              <ConnectButton />
+            ) : (
+              <div className="text-white/80 text-sm bg-white/10 border border-white/20 rounded-md px-3 py-2">
+                Set NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID to enable wallet connect
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* Wallet Info */}
-      {isConnected && (
-        <div className="relative z-10 mb-8">
-          <div className="container mx-auto px-4">
-            <div className="max-w-md mx-auto bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
-              <div className="flex items-center justify-between text-white">
-                <div className="flex items-center space-x-2">
-                  <Wallet className="w-5 h-5" />
-                  <span className="text-sm font-medium">
-                    {address?.slice(0, 6)}...{address?.slice(-4)}
-                  </span>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm text-white/80">Balance</div>
-                  <div className="font-medium">{formatBalance(balance?.value)}</div>
+      <div className="relative z-10 mb-8">
+        <div className="container mx-auto px-4">
+          <div className="max-w-md mx-auto bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
+            <div className="flex items-center justify-between text-white">
+              <div className="flex items-center space-x-2">
+                <Wallet className="w-5 h-5" />
+                <span className="text-sm font-medium">Wallet Status</span>
+              </div>
+              <div className="text-right">
+                <div className="text-sm text-white/80">Connected</div>
+                <div className="font-medium text-green-400">Ready</div>
+              </div>
+            </div>
+            
+            {currentMintPrice && (
+              <div className="mt-3 pt-3 border-t border-white/20">
+                <div className="flex items-center justify-between text-white">
+                  <div className="flex items-center space-x-2">
+                    <Flower className="w-5 h-5" />
+                    <span className="text-sm">Mint Price</span>
+                  </div>
+                  <div className="font-medium">{formatPrice(currentMintPrice)}</div>
                 </div>
               </div>
-              
-              {currentMintPrice && (
-                <div className="mt-3 pt-3 border-t border-white/20">
-                  <div className="flex items-center justify-between text-white">
-                    <div className="flex items-center space-x-2">
-                      <Flower className="w-5 h-5" />
-                      <span className="text-sm">Mint Price</span>
-                    </div>
-                    <div className="font-medium">{formatPrice(currentMintPrice)}</div>
-                  </div>
-                </div>
-              )}
+            )}
 
-              {/* 24h Mood Recording Status */}
-              {userMoodHistory && (
-                <div className="mt-3 pt-3 border-t border-white/20">
-                  <div className="flex items-center justify-between text-white">
-                    <div className="flex items-center space-x-2">
-                      <Clock className="w-5 h-5" />
-                      <span className="text-sm">Next Mood</span>
-                    </div>
-                    <div className={`font-medium ${canRecordMood() ? 'text-green-400' : 'text-yellow-400'}`}>
-                      {canRecordMood() ? 'Ready' : getTimeUntilNextMood()}
-                    </div>
+            {/* 24h Mood Recording Status */}
+            {userMoodHistory && (
+              <div className="mt-3 pt-3 border-t border-white/20">
+                <div className="flex items-center justify-between text-white">
+                  <div className="flex items-center space-x-2">
+                    <Clock className="w-5 h-5" />
+                    <span className="text-sm">Next Mood</span>
+                  </div>
+                  <div className={`font-medium ${canRecordMood() ? 'text-green-400' : 'text-yellow-400'}`}>
+                    {canRecordMood() ? 'Ready' : `${Math.floor(getTimeUntilNextMood() / 3600)}h ${Math.floor((getTimeUntilNextMood() % 3600) / 60)}m`}
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
-      )}
+      </div>
 
       {/* Main Content */}
       <div className="relative z-10 flex-1">
@@ -233,23 +227,10 @@ export default function MintPage() {
                     exit={{ opacity: 0, x: -50 }}
                     transition={{ duration: 0.5 }}
                   >
-                    {!isConnected ? (
-                      <div className="text-center py-12">
-                        <AlertCircle className="w-16 h-16 text-white/60 mx-auto mb-4" />
-                        <h3 className="text-2xl font-semibold text-white mb-2">
-                          Connect Your Wallet
-                        </h3>
-                        <p className="text-white/80 mb-6">
-                          Please connect your wallet to mint your living flower NFT
-                        </p>
-                        <ConnectButton />
-                      </div>
-                    ) : (
-                                             <MoodInput
-                         onMoodAnalyzed={handleMoodAnalyzed}
-                         onLoadingChange={handleLoadingChange}
-                       />
-                    )}
+                    <MoodInput
+                      onMoodAnalyzed={handleMoodAnalyzed}
+                      onLoadingChange={handleLoadingChange}
+                    />
                   </motion.div>
                 )}
 
@@ -276,15 +257,18 @@ export default function MintPage() {
                         </div>
                         <div className="bg-white/5 rounded-lg p-3">
                           <p className="text-white/60 text-sm">Confidence</p>
-                          <p className="text-white font-medium">{(moodParams.confidence * 100).toFixed(1)}%</p>
+                          <p className="text-white font-medium">{fmt(
+                            typeof moodParams.confidence === 'number' ? moodParams.confidence * 100 : undefined,
+                            1
+                          )}%</p>
                         </div>
                         <div className="bg-white/5 rounded-lg p-3">
                           <p className="text-white/60 text-sm">Entropy</p>
-                          <p className="text-white font-medium">{moodParams.entropy.toFixed(1)}</p>
+                          <p className="text-white font-medium">{fmt(moodParams.entropy, 1)}</p>
                         </div>
                         <div className="bg-white/5 rounded-lg p-3">
                           <p className="text-white/60 text-sm">Gap</p>
-                          <p className="text-white font-medium">{moodParams.gap.toFixed(1)}</p>
+                          <p className="text-white font-medium">{fmt(moodParams.gap, 1)}</p>
                         </div>
                       </div>
 
@@ -330,10 +314,10 @@ export default function MintPage() {
                         Back to Input
                       </button>
                       
-                                             {userMoodHistory && userMoodHistory[3] > 0 ? (
+                      {userMoodHistory && userMoodHistory[3] > 0 ? (
                         <button
                           onClick={handleRecordMood}
-                          disabled={!canRecordMood() || isRecording || contractLoading}
+                          disabled={!canRecordMood() || isRecording}
                           className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center space-x-2"
                         >
                           {isRecording ? (
@@ -351,7 +335,7 @@ export default function MintPage() {
                       ) : (
                         <button
                           onClick={handleMint}
-                          disabled={isMinting || contractLoading}
+                          disabled={isMinting}
                           className="px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-green-800 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center space-x-2"
                         >
                           {isMinting ? (

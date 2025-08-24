@@ -1,24 +1,21 @@
 'use client';
 
-import { config } from '@/lib/config';
 import { getDefaultConfig } from '@rainbow-me/rainbowkit';
 import '@rainbow-me/rainbowkit/styles.css';
 import { http } from 'viem';
-import { mainnet, shape, shapeSepolia } from 'viem/chains';
+import { shapeSepolia } from 'viem/chains';
+
+// Use compile-time injected NEXT_PUBLIC_* vars (required for client bundles)
+const alchemyKey = process.env.NEXT_PUBLIC_ALCHEMY_KEY || '';
+const walletConnectProjectId = process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || '';
 
 export const wagmiConfig = getDefaultConfig({
   appName: 'Shapes of Mind',
-  ssr: true,
-  projectId: config.walletConnectProjectId,
-  chains: [shape, shapeSepolia, mainnet],
+  ssr: false,
+  projectId: walletConnectProjectId,
+  chains: [shapeSepolia],
   transports: {
-    [shape.id]: http(`https://shape-mainnet.g.alchemy.com/v2/${config.alchemyKey}`, {
-      batch: true,
-    }),
-    [shapeSepolia.id]: http(`https://shape-sepolia.g.alchemy.com/v2/${config.alchemyKey}`, {
-      batch: true,
-    }),
-    [mainnet.id]: http(`https://eth-mainnet.g.alchemy.com/v2/${config.alchemyKey}`, {
+    [shapeSepolia.id]: http(`https://shape-sepolia.g.alchemy.com/v2/${alchemyKey}`, {
       batch: true,
     }),
   },
