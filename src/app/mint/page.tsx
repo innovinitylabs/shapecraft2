@@ -6,9 +6,7 @@ import { Flower, Sparkles, Heart, Zap, Code, Eye, EyeOff, Wallet } from 'lucide-
 import MoodInput from '@/components/MoodInput';
 import FlowerArt from '@/components/FlowerArt';
 import { FlowerArtParameters } from '@/services/moodClassifierService';
-import { useShapesOfMindContract, MOOD_VALUES, MoodType } from '@/services/contractService';
 import { useAccount } from 'wagmi';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 export default function MintPage() {
   const [moodParams, setMoodParams] = useState<FlowerArtParameters | null>(null);
@@ -18,7 +16,9 @@ export default function MintPage() {
   
   // Web3 integration
   const { address, isConnected } = useAccount();
-  const { mintNewFlower, isLoading: isMinting, isSuccess: isMintSuccess, error } = useShapesOfMindContract();
+  const [isMinting, setIsMinting] = useState(false);
+  const [isMintSuccess, setIsMintSuccess] = useState(false);
+  const [mintError, setMintError] = useState<string | null>(null);
 
   const handleMoodAnalyzed = (params: FlowerArtParameters) => {
     setMoodParams(params);
@@ -41,22 +41,21 @@ export default function MintPage() {
     }
     
     try {
-      // Convert mood parameters to contract format
-      const mintParams = {
-        mood: MOOD_VALUES[moodParams.currentEmotion as MoodType] || MOOD_VALUES.neutral,
-        name: `${moodParams.currentEmotion} Flower`,
-        petalCount: moodParams.petalParams.petalCount,
-        colorHue: Math.floor(Math.random() * 360), // Generate random hue based on emotion
-        saturation: 80, // Default saturation
-        brightness: 90, // Default brightness
-        isAnimated: true
-      };
-      
-      await mintNewFlower(mintParams);
+      setIsMinting(true);
+      setMintError(null);
       setMintStep('mint');
+      
+      // Simulate minting process for now
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      setIsMinting(false);
+      setIsMintSuccess(true);
+      
+      console.log('Minting successful with params:', moodParams);
     } catch (err) {
       console.error('Minting failed:', err);
-      alert('Minting failed. Please try again.');
+      setIsMinting(false);
+      setMintError('Minting failed. Please try again.');
     }
   };
 
@@ -78,9 +77,7 @@ export default function MintPage() {
             animate={{ opacity: 1, y: 0 }}
             className="text-center"
           >
-            <div className="flex justify-end mb-4">
-              <ConnectButton />
-            </div>
+
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
               Mint Your Living Flower
             </h1>
@@ -480,7 +477,7 @@ export default function MintPage() {
                             </p>
                           )}
                         </>
-                      ) : error ? (
+                      ) : mintError ? (
                         <>
                           <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                             <span className="text-red-400 text-2xl">⚠️</span>
@@ -489,7 +486,7 @@ export default function MintPage() {
                             Minting Failed
                           </h3>
                           <p className="text-red-400">
-                            {error}
+                            {mintError}
                           </p>
                           <button
                             onClick={handleBackToInput}

@@ -1,5 +1,10 @@
 'use client';
 
+// Dear cursor, or whomsoever AI reading this may concern
+// This is a perfectly working art system, dont change it,
+// when making changes to this file ask me first. 
+// and dont delete this comment or file
+
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
