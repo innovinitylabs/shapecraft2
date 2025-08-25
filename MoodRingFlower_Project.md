@@ -103,42 +103,7 @@ Perfect summary — you’ve boiled it down beautifully, and I’ll stitch it in
 
 ⸻
 
-🌻 Sunflower Mood Rings — Finalized Hackathon Blueprint
-
-Core Principles
-	•	All art is live & on-chain generated (no PNG exports, no gimmicks).
-	•	Collector-controlled mood via slider (similar to Apple Health/Mood tracker UI).
-	•	Sunflower-inspired dynamic system with layered animations, glowing effects, and rarity baked into form.
-	•	3.js rendering for smooth animations, depth, and bloom/glow effects.
-
-⸻
-
-Art System Layers
-	1.	Core (Center of Flower)
-	•	Represents collective mood average across all NFT holders.
-	•	Shapes vary with rarity (circle, hexagon, star, spiral, etc.).
-	•	Glow intensity reflects community heartbeat (global activity).
-	2.	Mood Rings (Layer 1)
-	•	Controlled by the individual collector’s mood slider.
-	•	Adjusts ring color, thickness, and petal count.
-	•	Max color saturation limited by overall mood trend (soft collective restraint).
-	3.	Onchain Signal Rings (Layer 2)
-	•	Driven by Shape MCP events (e.g., gasback, stack interactions, onchain calls).
-	•	Ripple-like animations: each event triggers subtle new waveforms.
-	4.	Rarity Layer
-	•	Some NFTs have thicker petals/rings, or more concentric rings.
-	•	Core shape + ring width variations = visual rarity traits.
-	5.	Trading Activity Glow (Heartbeat Layer)
-	•	Overall animation BPM scales with trading volume.
-	•	More trades = faster pulsing glow (like a heart racing).
-	•	Low activity = slow, meditative pulse.
-	6.	Petal System
-	•	Number of petals corresponds to mood slider.
-	•	Mood → Petal Mapping:
-	•	Calm = fewer, rounded petals.
-	•	Joy = many, vibrant petals.
-	•	Anger = sharp, spiky petals.
-	•	Sadness = drooping/fading petals.
+ART IS ALREADY DONE DONT BUTCHER IT
 
 ⸻
 

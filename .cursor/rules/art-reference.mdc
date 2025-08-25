@@ -1,0 +1,5 @@
+---
+alwaysApply: true
+---
+- the file art-tune-inpu.html has the basic working art sample built separately 
+- dont change flowerart.tsx content with a new art you create, we alread built that and its working fine
