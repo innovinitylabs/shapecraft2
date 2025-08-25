@@ -2,6 +2,10 @@
 
 A revolutionary generative NFT collection where each flower is a living entity that reflects your mood and the collective consciousness of the community. Built for Shape L2 with completely on-chain art generation and innovative gas-back rewards.
 
+## ✨ **Initial Project Vision**
+
+https://github.com/innovinitylabs/shapecraft2/blob/main/MoodRingFlower_Project.md
+
 ## ✨ **Latest Project Vision**
 
 ### 🌸 **Living Art Revolution**
@@ -14,16 +18,16 @@ Shapes of Mind represents a paradigm shift in NFT art - where each flower is not
 - **Streak-Based Features**: Bee animations unlock with consistent positive moods
 
 ### 💎 **Innovative NFT Economics**
-- **Gas-Back Rewards**: 80% gas refunds on Shape L2 for user engagement
-- **Dynamic Rarity**: Community-driven rarity system based on mood scores
-- **Living Metadata**: On-chain art that reads contract data for real-time updates
-- **Single Art Storage**: Efficient on-chain HTML art with versioning capabilities
+- **Gas-Back Rewards**: 80% gas refunds on Shape L2 for user engagement, which will be used to subsidise mood updating, so there's less friction in using this as mood tracker
+- **Dynamic Rarity**: A community-driven uniqueness system based on mood scores. There is no traditional rarity, since rarity often creates unnecessary stress among collectors. Instead, every artwork is unique, just as every human being is unique in their own way. Rarity is replaced by user streaks, which act as a leaderboard — rewarding users for maintaining a positive mindset.
+- **Living Metadata**: On-chain art that reads contract data for real-time updates (WIP)
+- **Single Art Storage**: Efficient on-chain HTML art with versioning capabilities (Considering using ZK in the future for privacy, have to do feasibility check)
 
 ## 🚀 **Current Implementation Status**
 
 ### ✅ **Completed Features**
 
-#### **Smart Contract (100% Complete)**
+#### **Smart Contract (100% Complete)** (Integration pending)
 - **ShapeL2FlowerMoodJournal.sol**: 623 lines of optimized Solidity code
 - **Gas Optimization**: 31.4% of block limit (3,763,106 gas)
 - **Storage Efficiency**: 60-97% savings with packed structs
@@ -36,12 +40,14 @@ Shapes of Mind represents a paradigm shift in NFT art - where each flower is not
 - **Web3 Integration**: Wagmi v2 + RainbowKit wallet connection
 - **Responsive Design**: Mobile-first design with Tailwind CSS
 - **Real-time Updates**: Dynamic flower evolution based on mood
+- **Beetifull bee**: spent hours building this bugger with code 🥰
 
-#### **Art System (95% Complete)**
+
 - **On-chain HTML Art**: 84KB optimized art file stored on-chain
 - **Dynamic Content**: Art reads contract data for animations
 - **Bee Animations**: Streak-based bee appearance (3+ happy days)
-- **Community Influence**: Art affected by collective mood
+- **Community Influence**: Art affected by collective mood (Community mood up = longer stalk)
+- **Trading activity**: Shows the liveliness of the project, the core of the flower reacts with trading activity (trading activity + gas back = treasury funds to sponsor mood updates)
 - **Future-Proof**: Dummy storage states for upcoming features
 
 ### 🔧 **Technical Architecture**
@@ -76,7 +82,7 @@ contract ShapeL2FlowerMoodJournal is ERC721, Ownable, Pausable {
 - **Tailwind CSS**: Utility-first styling
 
 #### **AI Integration**
-- **Mood Classifier API**: Python backend with ML model
+- **Mood Classifier API**: Python backend with ML model (Deployed with Railway via repo here https://github.com/innovinitylabs/shapes-of-mood-classifier.git)
 - **Real-time Analysis**: Instant emotion detection
 - **Parameter Mapping**: Converts emotions to visual parameters
 - **Community Aggregation**: Collective mood calculation
@@ -84,8 +90,8 @@ contract ShapeL2FlowerMoodJournal is ERC721, Ownable, Pausable {
 ## 🎯 **Shape L2 Advantages**
 
 ### **Technical Benefits**
-- **80% Gasback**: Users get 80% of gas costs back
-- **Higher Contract Limits**: No 24KB restriction (100KB+ available)
+- **80% Gasback**: Users get 80% of gas costs back, which can be used to fund a project treasury to subsidise mood updates with wallet abstraction 
+- **Higher Contract Limits**: No 24KB restriction (100KB+ available) - _Not sure, GPT told me_
 - **Lower Gas Costs**: 10-100x cheaper than mainnet
 - **Fast Transactions**: 2-5 second finality
 - **Account Abstraction**: Enhanced user experience
@@ -93,7 +99,7 @@ contract ShapeL2FlowerMoodJournal is ERC721, Ownable, Pausable {
 ### **Economic Model**
 - **Introductory Price**: 0.0042 ETH for early adopters
 - **Base Price**: 0.0069 ETH for regular minting
-- **Mood Journal**: 3 free entries, then 0.001 ETH per entry
+- **Mood Journal**: 3 free entries subsidies with funds from gasback, then 0.001 ETH per entry
 - **Gasback Distribution**: 80% of interaction costs returned
 - **Royalties**: 5% on secondary sales
 
@@ -291,13 +297,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Shape L2 Team**: For the innovative L2 solution
 - **Three.js Community**: For amazing 3D graphics tools
 - **OpenZeppelin**: For secure smart contract libraries
-- **Pingala**: Ancient mathematician who inspired our petal sequences
+- **[Pingala](https://en.wikipedia.org/wiki/Pingala)**: Ancient mathematician from the 3rd century BCE who inspired our petal sequences (the one behind the Fibonacci sequence, 1202CE)
+- Internet, **Cursor**, and open source sources (full credit citation pending)
 
 ## 📞 **Contact**
 
 - **Website**: [shapesofmind.art](https://shapesofmind.art)
-- **Twitter**: [@ShapesOfMindNFT](https://twitter.com/ShapesOfMindNFT)
-- **Discord**: [Join our community](https://discord.gg/shapesofmind)
+- **Twitter**: [@ShapesOfMindNFT](https://twitter.com/ShapesOfMindNFT) - Not Ready Yet 
+- **Discord**: [Join our community](https://discord.gg/shapesofmind) - Not Ready Yet 
 
 ---
 
@@ -308,3 +315,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 💭 **Developer Notes**
 
 > **Integration Status**: Our web3 integration is currently experiencing some compatibility issues with Wagmi v2 API changes, but the core functionality is working. The beautiful 3D art system is fully functional and the smart contract is complete and tested. Despite the integration challenges, I'm incredibly proud of what we've built - this represents a revolutionary approach to NFT art with living, breathing flowers that respond to emotions and community sentiment. The hackathon has been an amazing experience and I feel like I've already won by creating something truly innovative. The project will be shipped soon with full functionality! 🚀
+
+
+This project is fully vibe-coded, with just a tiny bit of manual code for the bees, crafted by ex-Civil Engineer turned artist VALIPOKKANN ( [X](https://x.com/VALIPOKKANN), [Site](valipokkann.in) ), who’s been in the NFT space since 2021. (The website design & demo slap, though 😎)
