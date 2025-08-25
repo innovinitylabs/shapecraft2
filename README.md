@@ -332,7 +332,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 **Contact**
 
 - **Website**: [shapesofmind.art](https://shapesofmind.art)
-- **Twitter**: [@ShapesOfMindNFT](https://twitter.com/ShapesOfMindNFT) - Not Ready Yet 
+- **Twitter**: [@ShapesOfMindNFT](https://twitter.com/ShapesOfMind) 
 - **Discord**: [Join our community](https://discord.gg/shapesofmind) - Not Ready Yet 
 
 ---
