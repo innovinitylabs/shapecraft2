@@ -13,7 +13,7 @@ A revolutionary generative NFT collection where each flower is a living entity t
 Shapes of Mind represents a paradigm shift in NFT art - where each flower is not just a static image, but a living, breathing entity that evolves with your emotions and the collective mood of our community. Our flowers are powered by AI mood analysis and rendered in stunning 3D using Three.js, creating a truly unique and personal art experience.
 
 ### 🧠 **AI-Powered Emotional Intelligence**
-- **Real-time Mood Analysis**: Advanced AI classifier that understands your emotional state
+- **Real-time Mood Analysis**: Advanced AI classifier that understands your emotional state from text
 - **Dynamic Visual Evolution**: Flowers change color, shape, and animation based on your mood
 - **Community Consciousness**: Flowers respond to collective community sentiment
 - **Streak-Based Features**: Bee animations unlock with consistent positive moods
@@ -22,7 +22,33 @@ Shapes of Mind represents a paradigm shift in NFT art - where each flower is not
 - **Gas-Back Rewards**: 80% gas refunds on Shape L2 for user engagement, which will be used to subsidise mood updating, so there's less friction in using this as mood tracker
 - **Dynamic Rarity**: A community-driven uniqueness system based on mood scores. There is no traditional rarity, since rarity often creates unnecessary stress among collectors. Instead, every artwork is unique, just as every human being is unique in their own way. Rarity is replaced by user streaks, which act as a leaderboard — rewarding users for maintaining a positive mindset.
 - **Living Metadata**: On-chain art that reads contract data for real-time updates (WIP)
-- **Single Art Storage**: Efficient on-chain HTML art with versioning capabilities (Considering using ZK in the future for privacy, have to do feasibility check)
+- **Single Art Storage**: Efficient on-chain HTML art with versioning capabilities (or stored in transaction to reduce smartcontract bulk Considering using ZK in the future for privacy, have to do feasibility check)
+- **Mood Journal**: Post mood update the user will get an image with what they wrote, their score and their flower snapshot which they can store as their mood journal. no data stored (except values on chain for streaks and animation) for privacy. (still brainstorming)
+
+### 🐝 Bee mechanics in adherence with Ayurveda
+
+1. Why Days Matter in Ayurveda and Mind Cycles
+	-	Ayurveda often talks about “dinacharya” (daily rhythm) and “rutucharya” (seasonal rhythm).
+	-	Transformation in body and mind is usually discussed in multiples of 3, 7, 14, and 21 days:
+	-	3 days: First shift in manas (mind) is felt. Mood, sleep, and digestion show noticeable changes. Ayurveda says agni (digestive fire) can be influenced within this span.
+	-	7 days (saptaha): A full cycle for subtle changes in the body’s tissues (dhatus) and mind. Often considered the minimum time to notice mental clarity or stability in positive habits.
+	-	14 days (paksha): Half a lunar cycle. Mood and mental health in Ayurveda are deeply tied to the moon’s influence (chandra governs the mind). Two weeks of steadiness often mark deeper balance.
+	-	21 days: Traditionally seen as a threshold for rewiring tendencies (modern psychology mirrors this with “habit formation” cycles). After this, a mental habit is considered stable.
+
+⸻
+
+2. Mapping That Onto Your Bee
+
+The bee wont appear too easily (otherwise the act loses meaning) but also not be locked away behind impossible discipline.
+	-	Minimum days for bee to appear (hover near flower): 3–7 days
+	-	3 days: acknowledges immediate effort; encourages continuation.
+	-	7 days: honors a saptaha cycle, deeper than a “just tried a little.”
+ - 14 days: symbolizes balance across a lunar phase. The mind stabilizes across waxing and waning energies. Bee Hovers a bit closer too center
+	-	21 days: completion of a full transformation cycle, a truly strong mental victory. Bee sits on center of the flower.
+
+(Optional idea)
+	-	14 days = bee lands at the petal edges. (write mesh detection code)
+	-	21 days = bee rests right at the center (bindu) of the flower, merging with the soul/essence.
 
 ## 🚀 **Current Implementation Status**
 
@@ -53,7 +79,7 @@ Shapes of Mind represents a paradigm shift in NFT art - where each flower is not
 - **Future-Proof**: Dummy storage states for upcoming features
 
 ### 🔧 **Technical Architecture**
-
+I would ignore reading this
 #### **Smart Contract Features**
 ```solidity
 // Core NFT functionality with mood journal
@@ -114,7 +140,7 @@ contract ShapeL2FlowerMoodJournal is ERC721, Ownable, Pausable {
 - **Royalties**: 5% on secondary sales
 - **Network**: Shape L2 (Ethereum L2 solution)
 
-## 🏆 **Innovation Highlights**
+# 🏆 **Innovation Highlights**
 
 ### **First-of-its-Kind Features**
 1. **Living NFT Art**: Flowers that evolve with emotions
