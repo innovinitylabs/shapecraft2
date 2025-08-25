@@ -40,10 +40,11 @@ Shapes of Mind represents a paradigm shift in NFT art - where each flower is not
 2. Mapping That Onto Your Bee
 
 The bee wont appear too easily (otherwise the act loses meaning) but also not be locked away behind impossible discipline.
+
 	-	Minimum days for bee to appear (hover near flower): 3–7 days
 	-	3 days: acknowledges immediate effort; encourages continuation.
 	-	7 days: honors a saptaha cycle, deeper than a “just tried a little.”
- - 14 days: symbolizes balance across a lunar phase. The mind stabilizes across waxing and waning energies. Bee Hovers a bit closer too center
+	-   14 days: symbolizes balance across a lunar phase. The mind stabilizes across waxing and waning energies. Bee Hovers a bit closer too center
 	-	21 days: completion of a full transformation cycle, a truly strong mental victory. Bee sits on center of the flower.
 
 (Optional idea)
@@ -54,7 +55,7 @@ The bee wont appear too easily (otherwise the act loses meaning) but also not be
 
 ### ✅ **Completed Features**
 
-#### **Smart Contract (100% Complete)** (Integration pending)
+#### **Smart Contract (100% Complete)** (Redoing web3 ideas now to implement all the feasible ideas)
 - **ShapeL2FlowerMoodJournal.sol**: 623 lines of optimized Solidity code 
 - **Gas Optimization**: 31.4% of block limit (3,763,106 gas)
 - **Storage Efficiency**: 60-97% savings with packed structs
@@ -65,7 +66,7 @@ The bee wont appear too easily (otherwise the act loses meaning) but also not be
 #### **Frontend (90% Complete)**
 - **Beautiful 3D Art**: Working Three.js flower rendering with OrbitControls
 - **Mood Classifier Integration**: AI-powered emotion analysis
-- **Web3 Integration**: Wagmi v2 + RainbowKit wallet connection
+- **Web3 Integration**: Wagmi v2 + RainbowKit wallet connection (this works in local)
 - **Responsive Design**: Mobile-first design with Tailwind CSS
 - **Real-time Updates**: Dynamic flower evolution based on mood
 - **Beetifull bee**: spent hours building this bugger with code 🥰
