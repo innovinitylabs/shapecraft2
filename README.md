@@ -3,7 +3,7 @@
 A revolutionary generative NFT collection where each flower is a living entity that reflects your mood and the collective consciousness of the community. Built for Shape L2 with completely on-chain art generation and innovative gas-back rewards.
 
 
- 
+ Demo Site: shapes-of-mind.vercel.app
 
 ## ✨ **Latest Project Vision**
 
