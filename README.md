@@ -2,11 +2,12 @@
 
 A revolutionary generative NFT collection where each flower is a living entity that reflects your mood and the collective consciousness of the community. Built for Shape L2 with completely on-chain art generation and innovative gas-back rewards.
 
-## ✨ **Initial Project Vision**
 
-https://github.com/innovinitylabs/shapecraft2/blob/main/MoodRingFlower_Project.md
+ 
 
 ## ✨ **Latest Project Vision**
+
+[✨ **Initial Project Vision**](https://github.com/innovinitylabs/shapecraft2/blob/main/MoodRingFlower_Project.md)
 
 ### 🌸 **Living Art Revolution**
 Shapes of Mind represents a paradigm shift in NFT art - where each flower is not just a static image, but a living, breathing entity that evolves with your emotions and the collective mood of our community. Our flowers are powered by AI mood analysis and rendered in stunning 3D using Three.js, creating a truly unique and personal art experience.
@@ -28,11 +29,12 @@ Shapes of Mind represents a paradigm shift in NFT art - where each flower is not
 ### ✅ **Completed Features**
 
 #### **Smart Contract (100% Complete)** (Integration pending)
-- **ShapeL2FlowerMoodJournal.sol**: 623 lines of optimized Solidity code
+- **ShapeL2FlowerMoodJournal.sol**: 623 lines of optimized Solidity code 
 - **Gas Optimization**: 31.4% of block limit (3,763,106 gas)
 - **Storage Efficiency**: 60-97% savings with packed structs
 - **25/25 Tests Passing**: Comprehensive test coverage
 - **Ready for Deployment**: Fully tested and optimized for Shape L2
+- https://sepolia.shapescan.xyz/address/0x5Fb9310C998cC608226316F521D6d25E97E4B78A
 
 #### **Frontend (90% Complete)**
 - **Beautiful 3D Art**: Working Three.js flower rendering with OrbitControls
@@ -316,5 +318,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 > **Integration Status**: Our web3 integration is currently experiencing some compatibility issues with Wagmi v2 API changes, but the core functionality is working. The beautiful 3D art system is fully functional and the smart contract is complete and tested. Despite the integration challenges, I'm incredibly proud of what we've built - this represents a revolutionary approach to NFT art with living, breathing flowers that respond to emotions and community sentiment. The hackathon has been an amazing experience and I feel like I've already won by creating something truly innovative. The project will be shipped soon with full functionality! 🚀
 
-
-This project is fully vibe-coded, with just a tiny bit of manual code for the bees, crafted by ex-Civil Engineer turned artist VALIPOKKANN ( [X](https://x.com/VALIPOKKANN), [Site](valipokkann.in) ), who’s been in the NFT space since 2021. (The website design & demo slap, though 😎)
+#### Thanks 🙏🏽
+This project is fully vibe-coded, with just a tiny bit of manual code for the bees, crafted by ex-Civil Engineer turned artist VALIPOKKANN ( [X](https://x.com/VALIPOKKANN), [Site](valipokkann.in) ), who’s been in the NFT space since 2021. (The website design & demo slap, though 😎). from coming up with idea to an demo in less than 48 hours (started late because of wrong time zone conversion i did, then sidetracked to my main website project and then spent hours perfecting bee lol) enjoyed this whole process, the most alive i felt in 2025.
