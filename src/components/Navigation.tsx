@@ -4,7 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Flower, Menu, X, Wallet } from 'lucide-react';
+import { Flower, Menu, X } from 'lucide-react';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -54,10 +55,7 @@ export default function Navigation() {
             })}
             
             {/* Connect Wallet Button */}
-            <button className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transition-all duration-300 flex items-center gap-2">
-              <Wallet className="w-4 h-4" />
-              Connect
-            </button>
+            <ConnectButton />
           </div>
 
           {/* Mobile Menu Button */}
@@ -100,10 +98,9 @@ export default function Navigation() {
                 })}
                 
                 {/* Mobile Connect Wallet Button */}
-                <button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transition-all duration-300 flex items-center justify-center gap-2">
-                  <Wallet className="w-5 h-5" />
-                  Connect Wallet
-                </button>
+                <div className="px-4">
+                  <ConnectButton />
+                </div>
               </div>
             </motion.div>
           )}
