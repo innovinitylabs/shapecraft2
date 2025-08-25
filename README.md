@@ -84,7 +84,7 @@ contract ShapeL2FlowerMoodJournal is ERC721, Ownable, Pausable {
 - **Tailwind CSS**: Utility-first styling
 
 #### **AI Integration**
-- **Mood Classifier API**: Python backend with ML model (Deployed with Railway via repo here https://github.com/innovinitylabs/shapes-of-mood-classifier.git)
+- **Mood Classifier API**: Python backend with ML model (Deployed with Railway via repo [here](https://github.com/innovinitylabs/shapes-of-mood-classifier.git)
 - **Real-time Analysis**: Instant emotion detection
 - **Parameter Mapping**: Converts emotions to visual parameters
 - **Community Aggregation**: Collective mood calculation
