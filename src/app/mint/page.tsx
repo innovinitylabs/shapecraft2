@@ -23,7 +23,6 @@ export default function MintPage() {
   };
 
   const handleMint = () => {
-    // TODO: Implement actual minting logic
     setMintStep('mint');
     console.log('Minting with params:', moodParams);
   };

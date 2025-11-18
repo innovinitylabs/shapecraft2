@@ -84,7 +84,6 @@ export default function GalleryPage() {
     nft.lastMoodUpdate = Date.now();
     
     setIsUpdatingMood(false);
-    // TODO: Integrate with smart contract
   };
 
   const handleRename = async (nft: NFT) => {
@@ -102,7 +101,6 @@ export default function GalleryPage() {
     
     setNewName('');
     setIsRenaming(false);
-    // TODO: Integrate with smart contract
   };
 
   return (
