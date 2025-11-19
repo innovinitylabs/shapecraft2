@@ -136,8 +136,8 @@ class MoodClassifierService {
   private baseUrl: string;
 
   constructor() {
-    // Use Railway backend URL - update this with your actual Railway URL
-    this.baseUrl = process.env.NEXT_PUBLIC_MOOD_CLASSIFIER_API_URL || 'https://shapes-of-mood.up.railway.app';
+    // Use local backend URL - defaults to localhost:5001
+    this.baseUrl = process.env.NEXT_PUBLIC_MOOD_CLASSIFIER_API_URL || 'http://localhost:5001';
   }
 
   async analyzeMood(request: MoodAnalysisRequest): Promise<FlowerArtParameters> {
